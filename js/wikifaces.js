@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function fetchPortraits() {
         try {
-            const response = await fetch("data/portraits.csv");
+            const response = await fetch("data/wikifaces-datacache.csv");
             const text = await response.text();
             portraits = parseCSV(text);
             updateScoreBoard();
