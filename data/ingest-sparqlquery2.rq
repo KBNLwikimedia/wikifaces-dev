@@ -1,0 +1,13 @@
+#Endpoint: https://query.wikidata.org/
+#Fetches images, names, descriptions and Wikipedia articles from people (Q5) 
+SELECT DISTINCT ?imageurl ?depictsLabel ?depictsDescription ?depictsWikipediaNL
+WHERE
+{
+  ?depicts wdt:P31 wd:Q5 . # instance of human
+  ?depicts wdt:P18 ?imageurl .
+  FILTER (REGEX(STR(?imageurl), "\\.(jpg|png|gif)$", "i"))
+  ?depictsWikipediaNL schema:about ?depicts;
+        schema:isPartOf <https://nl.wikipedia.org/>.
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" }
+}
+LIMIT 10000

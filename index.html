@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Basic Meta Tags -->
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="WikiFaces showcases historical portraits from the archives of Wikimedia. Discover and explore faces from history.">
+    <meta name="keywords" content="WikiFaces, Wikimedia, historical portraits, faces, archives">
+    <meta name="author" content="WikiFaces Team">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, orientation=portrait">
+    <!-- Title -->
+    <title>WikiFaces Game - Faces from the archives of Wikimedia.</title>
+
+    <!-- Open Graph Meta Tags (for better sharing on social media) -->
+    <meta property="og:title" content="WikiFaces - Faces from the archives of Wikimedia">
+    <meta property="og:description" content="Discover historical portraits from the Wikimedia archives. Dive into the faces of history.">
+    <meta property="og:image" content="https://www.wikifaces.org/media/wikifaces-logo.png">
+    <meta property="og:url" content="https://www.wikifaces.org">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="WikiFaces - Faces from the archives of Wikimedia">
+    <meta name="twitter:description" content="Explore historical portraits from Wikimedia archives and discover the stories behind them.">
+    <meta name="twitter:image" content="https://www.wikifaces.org/media/wikifaces-logo.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.wikifaces.org">
+
+    <!-- Fonts and Styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/wikifaces.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="media/wikifaces.ico">
+
+    <!-- JavaScript -->
+    <script type="text/javascript" src="js/wikifaces.js"></script>
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "WikiFaces",
+      "url": "https://www.wikifaces.org",
+      "description": "WikiFaces showcases historical portraits from the archives of Wikimedia. Discover and explore faces from history.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "WikiFaces Team",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.wikifaces.org/media/wikifaces-logo.png"
+        }
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.wikifaces.org/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+</head>
+<body>
+    <!-- WikiFaces Logo in the Top Left -->
+    <img id="logo" src="wikifaces-logo.png" alt="WikiFaces Logo">
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <!-- Full-screen portrait -->
+        <div id="portrait"></div>
+
+        <!-- Wikipedia Info Overlay -->
+        <div id="wiki-info" class="overlay"></div>
+
+        <!-- Name selection buttons -->
+        <div id="name-options"></div>
+
+        <!-- Result message -->
+        <p id="result-message"></p>
+
+        <!-- Scoreboard (Moved to Right) -->
+        <div id="score-board">Score: ✅ 0 - ❌ 0</div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="footer">
+        <div>
+            <a href="https://www.kb.nl" target="_blank">WikiFaces</a>
+        </div>
+        <div>Faces from the archives of Wikimedia</div>
+        <div>
+            <img src="wikipedia-logo.png" alt="Wikipedia Logo" width="30">
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
