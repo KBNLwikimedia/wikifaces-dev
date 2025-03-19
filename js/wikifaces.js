@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const MAX_ROUNDS = 10; // Configurable number of rounds
     let portraits = [];
     let correctPerson = null;
     let incorrectPerson = null;
@@ -11,12 +12,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const wikiInfo = document.getElementById("wiki-info");
     const gameContainer = document.getElementById("game-container");
     const scoreBoard = document.getElementById("score-board");
-    const footer = document.getElementById("footer");
-    const logo = document.getElementById("logo");
+    const messageButtonContainer = document.getElementById("message-button-container");
 
     async function fetchPortraits() {
         try {
-            const response = await fetch("data/wikifaces-datacache.csv");
+            const response = await fetch("data/wikifaces-datacache2.csv");
             const text = await response.text();
             portraits = parseCSV(text);
             updateScoreBoard();
@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Error fetching portraits:", error);
         }
     }
+
 
     function parseCSV(text) {
         const lines = text.split("\n").slice(1);
@@ -48,8 +49,48 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function updateScoreBoard() {
-        scoreBoard.textContent = `Score: ✅ ${score.correct} - ❌ ${score.wrong}`;
+        scoreBoard.innerHTML = "";
+        const correctRow = document.createElement("div");
+        const wrongRow = document.createElement("div");
+        correctRow.classList.add("score-row");
+        wrongRow.classList.add("score-row");
+
+        for (let i = 0; i < MAX_ROUNDS; i++) {
+            const correctCircle = document.createElement("div");
+            correctCircle.classList.add("score-circle", "light-green");
+            if (i < score.correct) {
+                correctCircle.classList.add("dark-green");
+            }
+            correctRow.appendChild(correctCircle);
+
+            const wrongCircle = document.createElement("div");
+            wrongCircle.classList.add("score-circle", "light-red");
+            if (i < score.wrong) {
+                wrongCircle.classList.add("dark-red");
+            }
+            wrongRow.appendChild(wrongCircle);
+        }
+
+        scoreBoard.appendChild(correctRow);
+        scoreBoard.appendChild(wrongRow);
     }
+
+   function checkGameEnd() {
+        if (score.correct >= MAX_ROUNDS) {
+            alert("Well done!");
+            resetGame();
+        } else if (score.wrong >= MAX_ROUNDS) {
+            alert("Donate to Wikipedia");
+            resetGame();
+        }
+    }
+
+    function resetGame() {
+        score.correct = 0;
+        score.wrong = 0;
+        updateScoreBoard();
+    }
+
 
     function loadNewRound() {
         if (portraits.length < 2) return;
@@ -86,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
         wikiInfo.style.display = "none";
     }
 
-    function handleSelection(event) {
+function handleSelection(event) {
         const selectedName = event.target.textContent;
         roundPlayed = true;
 
@@ -94,36 +135,49 @@ document.addEventListener("DOMContentLoaded", function () {
             button.disabled = true;
         });
 
+        let wasCorrect = false;
         if (selectedName === correctPerson.name) {
             event.target.style.color = "green";
             score.correct++;
+            resultMessage.textContent = "✅ You are right!";
+            wasCorrect = true;
         } else {
             event.target.style.color = "red";
             score.wrong++;
+            resultMessage.textContent = `❌ You were wrong! This was ${correctPerson.name}.`;
         }
 
         updateScoreBoard();
-        fetchWikiSummary(correctPerson.name, correctPerson.wikipedia);
+        fetchWikiSummary(correctPerson.name, correctPerson.wikipedia, wasCorrect);
     }
 
-    async function fetchWikiSummary(name, wikipediaURL) {
+      function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
         try {
             const wikiTitle = wikipediaURL.split("/").pop();
-            const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`);
-            const data = await response.json();
+            fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`)
+                .then(response => response.json())
+                .then(data => {
+                    wikiInfo.innerHTML = `
+                        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}">
+                            <p>${correctPerson.description}</p>
+                            <h3>${data.title}</h3>
+                            <p>${data.extract}</p>
+                            <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia</a>
+                        </div>
+                    `;
+                    wikiInfo.style.display = "block";
 
-            wikiInfo.innerHTML = `
-                <div class="overlay">
-                    <p>${correctPerson.description}</p>
-                    <h3>${data.title}</h3>
-                    <p>${data.extract}</p>
-                    <a href="${wikipediaURL}" target="_blank" onclick="event.stopPropagation();">Read more on Wikipedia</a>
-                </div>
-            `;
-            wikiInfo.style.display = "block";
+                    // Delay the game end check to ensure the last circle is updated
+                    setTimeout(checkGameEnd, 1200);
+                })
+                .catch(error => {
+                    wikiInfo.innerHTML = `<div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}"><p>${correctPerson.description}</p><p>Could not load Wikipedia info.</p></div>`;
+                    wikiInfo.style.display = "block";
+
+                    setTimeout(checkGameEnd, 1200);
+                });
         } catch (error) {
-            wikiInfo.innerHTML = `<div class="overlay"><p>${correctPerson.description}</p><p>Could not load Wikipedia info.</p></div>`;
-            wikiInfo.style.display = "block";
+            console.error("Error fetching Wikipedia summary:", error);
         }
     }
 
