@@ -65,12 +65,17 @@
 </head>
 <body>
     <!-- WikiFaces Logo in the Top Left -->
-    <img id="logo" src="wikifaces-logo.png" alt="WikiFaces Logo">
+    <img id="logo" src="media/wikifaces-logo.png" alt="WikiFaces Logo">
 
     <!-- Game Container -->
     <div id="game-container">
         <!-- Full-screen portrait -->
         <div id="portrait"></div>
+
+        <div id="score-board">
+          <div id="correct-row" class="score-row"></div>
+          <div id="wrong-row" class="score-row"></div>
+        </div>
 
         <!-- Wikipedia Info Overlay -->
         <div id="wiki-info" class="overlay"></div>
@@ -82,10 +87,7 @@
         <p id="result-message"></p>
 
         <!-- Scoreboard (Moved to Right) -->
-        <div id="score-board">
-          <div id="correct-row" class="score-row"></div>
-          <div id="wrong-row" class="score-row"></div>
-        </div>
+
     </div>
 
     <!-- Footer -->
@@ -93,12 +95,10 @@
         <div>
             <a href="https://www.kb.nl" target="_blank">WikiFaces</a>
         </div>
-        <div>Faces from the archives of Wikimedia</div>
+        <div><p>Faces from the archives of Wikimedia</p></div>
         <div>
-            <img src="wikipedia-logo.png" alt="Wikipedia Logo" width="30">
+            <img src="media/wikimedia-logos2.png" alt="Wikimedia Logos" width="60">
         </div>
     </footer>
-
-    <script src="script.js"></script>
 </body>
 </html>

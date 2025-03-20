@@ -1,90 +1,46 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    color: white;
+    font-family: 'Source Sans Pro', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    /* border: 3px solid green; */
+}
+
+/* WikiFaces Logo in the top-left */
+#logo {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 20;
+    width: 100px;
+    filter: invert(1); /* Inverts colors */
+}
 /* Full-screen background image */
 #portrait {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0px;
+    right: 0px;
     width: 100vw;
     height: 100vh;
     background-size: cover;
     background-position: center;
-    filter: brightness(60%);
+    filter: brightness(70%);
     z-index: -1;
-}
-
-/* Overlay for Wikipedia Info */
-.overlay {
-    position: absolute;
-    bottom: 80px; /* Positioned above the buttons */
-    width: 100%;
-    padding: 20px;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    z-index: 10;
-    color: white;
-}
-
-/* Greenish transparent overlay for correct answers */
-.overlay-correct {
-    background: rgba(0, 128, 0, 0.6);
-}
-
-/* Reddish transparent overlay for incorrect answers */
-.overlay-wrong {
-    background: rgba(200, 0, 0, 0.6);
-}
-
-/* Buttons */
-#name-options {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-}
-
-.name-option {
-    flex: 1;
-    max-width: 200px;
-    padding: 10px;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    background: white;
-    color: #333;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.3s ease-in-out;
-}
-
-.name-option:hover {
-    background-color: #ddd;
-}
-
-/* Change text color on selection */
-.name-option:disabled {
-    cursor: not-allowed;
-}
-
-/* Responsive: Stack buttons vertically on smaller screens */
-@media (max-width: 600px) {
-    #name-options {
-        flex-direction: column;
-        gap: 10px;
-    }
 }
 
 /* Scoreboard container */
 #score-board {
-    position: absolute;
+    position: fixed;
     top: 10px;
     right: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 5px;
+    border: 0px solid red;
 }
 
 /* Score rows */
@@ -98,82 +54,144 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Default light colors */
 .light-green {
-    background-color: #a0e7a0;
+    background-color: #a0e7a9;
 }
 
 .light-red {
-    background-color: #f5a9a9;
+    background-color: #ff999c;
 }
 
-/* Dark colors when score increases */
+/* Dark green - Show Green Smiley PNG */
 .dark-green {
-    background-color: #008000;
+    background-color: transparent;
+    background-image: url('/media/green-smiley.png'); /* Replace with actual path */
+    background-size: contain; /* Ensures image fits inside the circle */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents tiling */
 }
 
+/* Dark red - Show red Sad face PNG */
 .dark-red {
-    background-color: #d40000;
+    background-color: transparent;
+    background-image: url('/media/red-sadface.png'); /* Replace with actual path */
+    background-size: contain; /* Ensures image fits inside the circle */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents tiling */
+}
+
+
+/* Overlay for Wikipedia Info */
+.overlay {
+    position: absolute;
+    top: 50px;
+    width: 100%;
+    left: 0;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+    text-align: center;
+    box-sizing: border-box;
+    z-index: 220;
+    color: white;
+    border: 2px solid white;
+}
+
+/* Greenish transparent overlay for correct answers */
+.overlay-correct {
+    background: rgba(0, 128, 0, 0.4);
+}
+
+/* Reddish transparent overlay for incorrect answers */
+.overlay-wrong {
+    background: rgba(200, 0, 0, 0.4);
+}
+
+/* Buttons */
+#name-options {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    position: absolute;
+    bottom: 70px;
+    width: 100%;
+}
+
+.name-option {
+    flex: 1;
+    max-width: 400px;
+    padding: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+        border: 2px solid red;
+}
+
+.name-option:hover {
+    background-color: #bbb;
+}
+
+.name-option:disabled {
+    cursor: not-allowed;
+    background: black;
+    pointer-events: none; /* Disables all pointer (mouse/touch) interactions */
+    opacity: 0.5; /* (Optional) Makes it look visually disabled */
 }
 
 /* Footer (Fixed at the bottom) */
 #footer {
     position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: black;
+    bottom: 0px;
+    width: 100vw;
+    height: 30px;
+    background: rgba(0, 0, 0, 1);
     color: white;
     padding: 10px 15px;
     display: flex;
+    gap: 10px;
     justify-content: space-between;
     align-items: center;
     font-size: 14px;
+    z-index: 0;
+    border: 0px solid rgba(55, 55, 255, 0.8);
 }
-
 #footer a {
-    color: white;
+    margin-left: 10px;
+    color: #fff;
     text-decoration: none;
     font-weight: bold;
+    font-size: 16px;
+}
+#footer p {
+    margin: 0px;
+    text-align: center;
+    flex-grow: 1;
+    color: #fff;
+    font-size: 14px;
+}
+#footer img {
+    width: 100px;
+    height: auto;
+    margin-top: 5px;
+    margin-right: 30px;
 }
 
-#footer a:hover {
-    text-decoration: underline;
-}
-
-/* WikiFaces Logo in the top-left */
-#logo {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 20;
-    width: 50px;
-}
-
-/* Message Button Container */
-#message-button-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    justify-content: center;
-}
-
-/* End Game Message Button */
-.message-button {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 15px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
-    cursor: pointer;
-    transition: background 0.3s ease-in-out;
-}
-
-.message-button:hover {
-    background: rgba(255, 255, 255, 0.4);
+/* Responsive: Stack buttons vertically on smaller screens */
+@media (max-width: 600px) {
+    #name-options {
+        flex-direction: column;
+        gap: 10px;
+    }
 }

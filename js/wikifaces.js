@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const MAX_ROUNDS = 10; // Configurable number of rounds
+    const MAX_ROUNDS = 2; // Configurable number of rounds
     let portraits = [];
     let correctPerson = null;
     let incorrectPerson = null;
@@ -25,7 +25,6 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Error fetching portraits:", error);
         }
     }
-
 
     function parseCSV(text) {
         const lines = text.split("\n").slice(1);
@@ -154,7 +153,7 @@ function handleSelection(event) {
       function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
         try {
             const wikiTitle = wikipediaURL.split("/").pop();
-            fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`)
+            fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
                 .then(response => response.json())
                 .then(data => {
                     wikiInfo.innerHTML = `
