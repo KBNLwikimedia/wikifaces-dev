@@ -124,61 +124,85 @@ document.addEventListener("DOMContentLoaded", function () {
         resultMessage.textContent = "";
         wikiInfo.innerHTML = "";
         wikiInfo.style.display = "none";
+
+        document.getElementById("result-message").style.display = "none"; // Hide result message
     }
 
 function handleSelection(event) {
-        const selectedName = event.target.textContent;
-        roundPlayed = true;
+    const selectedName = event.target.textContent;
+    roundPlayed = true;
 
-        document.querySelectorAll(".name-option").forEach(button => {
-            button.disabled = true;
-        });
+    document.querySelectorAll(".name-option").forEach(button => {
+        button.disabled = true;
+    });
 
-        let wasCorrect = false;
-        if (selectedName === correctPerson.name) {
-            event.target.style.color = "green";
-            score.correct++;
-            resultMessage.textContent = "✅ You are right!";
-            wasCorrect = true;
-        } else {
-            event.target.style.color = "red";
-            score.wrong++;
-            resultMessage.textContent = `❌ You were wrong! This was ${correctPerson.name}.`;
-        }
+    let wasCorrect = false;
+    const resultMessage = document.getElementById("result-message");
 
-        updateScoreBoard();
-        fetchWikiSummary(correctPerson.name, correctPerson.wikipedia, wasCorrect);
+    if (selectedName === correctPerson.name) {
+        event.target.style.color = "green";
+        score.correct++;
+        resultMessage.textContent = `✅ You are right! This was ${correctPerson.name}.`;
+        wasCorrect = true;
+    } else {
+        event.target.style.color = "red";
+        score.wrong++;
+        resultMessage.textContent = `❌ Oh, no! This was ${correctPerson.name}, not ${incorrectPerson.name}.`;
     }
 
-      function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
-        try {
-            const wikiTitle = wikipediaURL.split("/").pop();
-            fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
-                .then(response => response.json())
-                .then(data => {
-                    wikiInfo.innerHTML = `
-                        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}">
-                            <p>${correctPerson.description}</p>
-                            <h3>${data.title}</h3>
-                            <p>${data.extract}</p>
-                            <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia</a>
-                        </div>
-                    `;
-                    wikiInfo.style.display = "block";
+    resultMessage.style.display = "block"; // Show message
 
-                    // Delay the game end check to ensure the last circle is updated
-                    setTimeout(checkGameEnd, 1200);
-                })
-                .catch(error => {
-                    wikiInfo.innerHTML = `<div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}"><p>${correctPerson.description}</p><p>Could not load Wikipedia info.</p></div>`;
-                    wikiInfo.style.display = "block";
+    updateScoreBoard();
+    fetchWikiSummary(correctPerson.name, correctPerson.wikipedia, wasCorrect);
 
-                    setTimeout(checkGameEnd, 1200);
-                });
-        } catch (error) {
-            console.error("Error fetching Wikipedia summary:", error);
-        }
+}
+
+function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
+    try {
+        const wikiTitle = wikipediaURL.split("/").pop();
+        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
+            .then(response => response.json())
+            .then(data => {
+                let extract = data.extract || "No description available from Wikipedia.";
+
+                // Define truncation limits
+                const MAX_WORDS = 60; // Limit by words
+                const MAX_CHARACTERS = 250; // Limit by characters
+
+                // Process extract text to truncate if necessary
+                const words = extract.split(" ");
+                if (words.length > MAX_WORDS || extract.length > MAX_CHARACTERS) {
+                    extract = words.slice(0, MAX_WORDS).join(" ");
+                    if (extract.length > MAX_CHARACTERS) {
+                        extract = extract.substring(0, MAX_CHARACTERS);
+                    }
+                    extract += "...";
+                }
+
+                // Insert truncated extract into the overlay
+                wikiInfo.innerHTML = `
+                    <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}">
+                        <p class="description">${correctPerson.description}</p>
+                        <h2>${data.title}</h2>
+                        <p>${extract}</p>
+                        <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+                    </div>
+                `;
+                wikiInfo.style.display = "block";
+
+                // Delay the game end check to ensure the last circle is updated
+                setTimeout(checkGameEnd, 1200);
+            })
+            .catch(error => {
+                wikiInfo.innerHTML = `<div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}"><p>${correctPerson.description}</p><p>Could not load Wikipedia info.</p></div>`;
+                wikiInfo.style.display = "block";
+
+                setTimeout(checkGameEnd, 1200);
+            });
+    } catch (error) {
+        console.error("Error fetching Wikipedia summary:", error);
     }
+}
 
     gameContainer.addEventListener("touchend", (event) => {
         if (!event.target.closest("a") && roundPlayed) {
