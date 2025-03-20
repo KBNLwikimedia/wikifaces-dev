@@ -71,7 +71,7 @@ body {
 /* Dark green - Show Green Smiley PNG */
 .dark-green {
     background-color: transparent;
-    background-image: url('/media/green-smiley.png'); /* Replace with actual path */
+    background-image: url('../media/green-smiley.png'); /* Replace with actual path */
     background-size: contain; /* Ensures image fits inside the circle */
     background-position: center; /* Centers the image */
     background-repeat: no-repeat; /* Prevents tiling */
@@ -80,7 +80,7 @@ body {
 /* Dark red - Show red Sad face PNG */
 .dark-red {
     background-color: transparent;
-    background-image: url('/media/red-sadface.png'); /* Replace with actual path */
+    background-image: url('../media/red-sadface.png'); /* Replace with actual path */
     background-size: contain; /* Ensures image fits inside the circle */
     background-position: center; /* Centers the image */
     background-repeat: no-repeat; /* Prevents tiling */
