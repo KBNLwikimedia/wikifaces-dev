@@ -201,19 +201,29 @@ body {
 }
 #result-message {
     position: fixed;
-    top: 44px;
+    top: 8px;
     left: 50%;
-    transform: translate(-50%, -50%); /* Perfect centering */
+    transform: translate(-50%, 0); /* Center horizontally */
     background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
     color: white;
     font-size: 24px;
     font-weight: bold;
-    padding: 20px;
+    padding: 20px 20px; /* Balanced padding */
     border-radius: 10px;
     text-align: center;
-    width: 100%; /* Adjust width */
+    display: flex;
+    align-items: center; /* Aligns image and text vertically */
+    justify-content: center; /* Centers content */
+    gap: 10px; /* Adds spacing between icon and text */
+    width: 100%; /* Adjusts based on content */
     z-index: 9; /* Ensures it stays above other elements */
     display: none; /* Initially hidden */
+}
+
+
+#result-message img {
+    width: 30px; /* Adjusts icon size */
+    height: auto; /* Maintains aspect ratio */
 }
 
 

@@ -139,23 +139,27 @@ function handleSelection(event) {
     let wasCorrect = false;
     const resultMessage = document.getElementById("result-message");
 
+    let happyFace = '<img src="../media/green-smiley.png" alt="Happy">';
+    let sadFace = '<img src="../media/red-sadface.png" alt="Sad">';
+
     if (selectedName === correctPerson.name) {
         event.target.style.color = "green";
         score.correct++;
-        resultMessage.textContent = `✅ You are right! This was ${correctPerson.name}.`;
+        resultMessage.innerHTML = `${happyFace} <span>Spot on! This was ${correctPerson.name}.</span>`;
         wasCorrect = true;
     } else {
         event.target.style.color = "red";
         score.wrong++;
-        resultMessage.textContent = `❌ Oh, no! This was ${correctPerson.name}, not ${incorrectPerson.name}.`;
+        resultMessage.innerHTML = `${sadFace} <span>Oh, no! This was ${correctPerson.name}, not ${incorrectPerson.name}.</span>`;
     }
 
-    resultMessage.style.display = "block"; // Show message
+    resultMessage.style.display = "flex"; // Show message with flexbox
 
     updateScoreBoard();
     fetchWikiSummary(correctPerson.name, correctPerson.wikipedia, wasCorrect);
-
 }
+
+
 
 function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
     try {
