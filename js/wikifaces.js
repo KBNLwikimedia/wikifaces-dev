@@ -128,18 +128,18 @@ document.addEventListener("DOMContentLoaded", function () {
     /**
      * Displays a visible error message on the screen if image fails to load.
      */
-function showImageLoadError(duration = IMAGE_ERROR_DISPLAY_DURATION) {
-  const errorMessage = document.createElement("div");
-  errorMessage.textContent = "⚠️ Failed to load image. Please try again.";
-  errorMessage.className = "portrait-load-error"; // 🔧 fixed: no leading dot here!
-  document.body.appendChild(errorMessage);
+    function showImageLoadError(duration = IMAGE_ERROR_DISPLAY_DURATION) {
+      const errorMessage = document.createElement("div");
+      errorMessage.textContent = "⚠️ Failed to load image. Please try again.";
+      errorMessage.className = "portrait-load-error"; // 🔧 fixed: no leading dot here!
+      document.body.appendChild(errorMessage);
 
-  setTimeout(() => {
-    if (errorMessage.parentElement) {
-      errorMessage.parentElement.removeChild(errorMessage);
+      setTimeout(() => {
+        if (errorMessage.parentElement) {
+          errorMessage.parentElement.removeChild(errorMessage);
+        }
+      }, duration);
     }
-  }, duration);
-}
 
 
     /**

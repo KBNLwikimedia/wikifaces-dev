@@ -243,10 +243,6 @@ body {
     cursor: pointer;
 }
 
-  pointer-events: auto;
-  touch-action: auto;
-  cursor: pointer; /* Optional: gives visual cue */
-
 .overlay-disabled {
   pointer-events: none;
   touch-action: none;
