@@ -107,7 +107,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    // Whether the user selected the correct name or not
+    /**
+     * Handles the user's name selection.
+     * - Compares selected name to the correct answer
+     * - Updates score and displays result message
+     * - Locks interactions briefly to prevent rapid input
+     * - Initiates Wikipedia summary loading
+     *
+     * @param {Event} event - The click event from the name button
+     */
     function handleSelection(event) {
         if (interactionLocked) return;
         interactionLocked = true;
@@ -330,7 +338,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function preloadPortraitImage(src, onLoad) {
         const img = new Image();
         img.src = src;
+
         img.onload = () => onLoad();
+
+        img.onerror = () => {
+            console.error("Image failed to load:", src);
+            const spinner = document.getElementById("portrait-spinner");
+            if (spinner) spinner.style.display = "none";
+            interactionLocked = false; // ✅ UNLOCK even if it fails
+        };
     }
 
 
@@ -347,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setTimeout(() => {
             portraitElement.classList.remove("fade-in");
             if (typeof callback === 'function') callback();
-        }, 500);
+        }, 800);
     }
 
     /**
@@ -363,7 +379,8 @@ document.addEventListener("DOMContentLoaded", function () {
      * Loads and sets up the next round.
      */
     function loadNewRound() {
-        if (portraits.length < 2) return;
+        if (interactionLocked || portraits.length < 2) return;
+        interactionLocked = true;
         roundPlayed = false;
 
         const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
@@ -395,18 +412,19 @@ document.addEventListener("DOMContentLoaded", function () {
         if (spinner) spinner.style.display = "block";
 
         preloadPortraitImage(correctPerson.image, () => {
-            portraitElement.classList.add("fade-out");
-            nameOptions.classList.add("fade-out");
+        portraitElement.classList.add("fade-out");
+        nameOptions.classList.add("fade-out");
 
-            setTimeout(() => {
-                portraitElement.classList.remove("fade-out");
-                nameOptions.classList.remove("fade-out");
-                showPortraitImage(() => {
-                    nameOptions.style.display = "flex";
-                });
-            }, 500);
-        });
-    }
+        setTimeout(() => {
+            portraitElement.classList.remove("fade-out");
+            nameOptions.classList.remove("fade-out");
+            showPortraitImage(() => {
+                nameOptions.style.display = "flex";
+                interactionLocked = false; // ✅ UNLOCK HERE after image is ready
+            });
+        }, 500);
+    });
+}
 
 
     function checkGameEnd() {
