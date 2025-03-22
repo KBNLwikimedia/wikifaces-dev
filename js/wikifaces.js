@@ -2,13 +2,24 @@ document.addEventListener("DOMContentLoaded", function () {
     const MAX_ROUNDS = 5; // Configurable number of rounds
     const MAX_CHARACTERS = 250;
 
-    // === Global Timeout Configurations ===
-    const FADE_DURATION = 0;                  // Duration of fade-in/out animations
+    // === Global Timeout Configurations - in milliseconds ===
+    const NEW_ROUND_FADE_DELAY = 0; // Delay before revealing portrait and buttons
+    const IMAGE_LOAD_TIMEOUT = 5000;       // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
+    const FADE_DURATION = 500;            // Interval between showing the portrait ans showing the name buttons
+    const IMAGE_ERROR_DISPLAY_DURATION = 1000; // How long the image loading error message is shown (ms)
+
+    const SWIPE_THRESHOLD = 100;           // Minimum swipe distance to trigger next round
+
+    const SWIPE_INTERACTION_UNLOCK_DELAY = 0; // Delay before interaction unlock after swipe (ms)
     const OVERLAY_CLICK_LOCK_TIME = 0;     // Delay before overlay becomes clickable
+    const RESULT_INTERACTION_LOCK = 0;      // Delay before next interaction allowed after result banner is shown (ms)
+    const OVERLAY_INTERACTION_DELAY = 0; // How long the overlay stays non-clickable after it's shown (ms)
     const NEXT_ROUND_UNLOCK_TIME = 0;      // Time during which rapid-fire clicks on overlay are disabled
-    const IMAGE_LOAD_TIMEOUT = 5000;          // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
-    const RESULT_INTERACTION_LOCK = 0;        // Delay before next interaction allowed
-    const GAME_END_COUNTDOWN_START = 5;       // Countdown seconds after game ends
+
+    const GAME_END_DISPLAY_DELAY = 1600;   // Delay before showing win/loss GIF (ms)
+    const GAME_END_COUNTDOWN_START = 5;       // Countdown seconds after game ends and new game begin
+    const GAME_END_INTERVAL_DELAY = 1000;  // Countdown tick interval (ms)
+
 
     let portraits = [];
     let correctPerson = null;
@@ -115,18 +126,19 @@ document.addEventListener("DOMContentLoaded", function () {
     /**
      * Displays a visible error message on the screen if image fails to load.
      */
-    function showImageLoadError() {
-        const errorMessage = document.createElement("div");
-        errorMessage.textContent = "⚠️ Failed to load image. Please try again.";
-        errorMessage.className = ".portrait-load-error";
-        document.body.appendChild(errorMessage);
+function showImageLoadError(duration = IMAGE_ERROR_DISPLAY_DURATION) {
+  const errorMessage = document.createElement("div");
+  errorMessage.textContent = "⚠️ Failed to load image. Please try again.";
+  errorMessage.className = "portrait-load-error"; // 🔧 fixed: no leading dot here!
+  document.body.appendChild(errorMessage);
 
-        setTimeout(() => {
-            if (errorMessage.parentElement) {
-                errorMessage.parentElement.removeChild(errorMessage);
-            }
-        }, 4000);
+  setTimeout(() => {
+    if (errorMessage.parentElement) {
+      errorMessage.parentElement.removeChild(errorMessage);
     }
+  }, duration);
+}
+
 
     /**
      * Parses CSV text into an array of person objects.
@@ -289,7 +301,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 interactionLocked = true;
                 loadNewRound();
                 resetOverlayState();
-                setTimeout(() => interactionLocked = false, 1000);
+                setTimeout(() => interactionLocked = false, SWIPE_INTERACTION_UNLOCK_DELAY);
             }
         }
 
@@ -346,7 +358,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     nameOptions.style.display = "flex";
                     unlockInteraction();
                 });
-            }, 1000);
+            }, NEW_ROUND_FADE_DELAY);
         });
     }
 
@@ -470,7 +482,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else {
                         countdownElement.textContent = `New game will start in ${countdown} seconds`;
                     }
-                }, 0);
+                }, GAME_END_INTERVAL_DELAY); // 🔄 use global constant here
 
                 endMessage.innerHTML = `
                     <div class="end-text">${messageText}</div>
@@ -490,7 +502,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 document.body.appendChild(endMessage);
-            }, 1600); // Delay before showing end screen
+            }, GAME_END_DISPLAY_DELAY); // Delay before showing end screen
         }
     }
 
@@ -522,7 +534,7 @@ document.addEventListener("DOMContentLoaded", function () {
           setTimeout(() => {
             overlay.style.pointerEvents = "auto";
             overlay.style.touchAction = "auto";
-          }, 2000);
+          }, OVERLAY_INTERACTION_DELAY);
         }
 
         addSwipeListeners();
