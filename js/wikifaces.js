@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const MAX_ROUNDS = 2; // Configurable number of rounds
+    const MAX_ROUNDS = 5; // Configurable number of rounds
     let portraits = [];
     let correctPerson = null;
     let incorrectPerson = null;
@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let roundPlayed = false;
 
     const portraitElement = document.getElementById("portrait");
-    const nameOptions = document.getElementById("name-options");
+    const nameOptions = document.getElementById("buttons");
     const resultMessage = document.getElementById("result-message");
     const wikiInfo = document.getElementById("wiki-info");
     const gameContainer = document.getElementById("game-container");
@@ -74,140 +74,216 @@ document.addEventListener("DOMContentLoaded", function () {
         scoreBoard.appendChild(wrongRow);
     }
 
-   function checkGameEnd() {
-        if (score.correct >= MAX_ROUNDS) {
-            alert("Well done!");
-            resetGame();
-        } else if (score.wrong >= MAX_ROUNDS) {
-            alert("Donate to Wikipedia");
-            resetGame();
-        }
-    }
-
-    function resetGame() {
-        score.correct = 0;
-        score.wrong = 0;
-        updateScoreBoard();
-    }
 
 
-    function loadNewRound() {
-        if (portraits.length < 2) return;
-        roundPlayed = false;
+    // Whether th user selected the correct name or not
+    function handleSelection(event) {
+        const selectedName = event.target.textContent;
+        roundPlayed = true;
 
-        const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
-        const selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
-
-        const nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
-        if (nameGroup.length < 2) {
-            loadNewRound();
-            return;
-        }
-
-        nameGroup.sort(() => Math.random() - 0.5);
-        correctPerson = nameGroup[0];
-        incorrectPerson = nameGroup[1];
-
-        const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
-
-        portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
-
-        nameOptions.innerHTML = "";
-        allNames.forEach(name => {
-            const button = document.createElement("button");
-            button.textContent = name;
-            button.classList.add("name-option");
-            button.addEventListener("click", handleSelection);
-            nameOptions.appendChild(button);
+        document.querySelectorAll(".button").forEach(button => {
+            button.disabled = true;
         });
 
-        resultMessage.textContent = "";
-        wikiInfo.innerHTML = "";
-        wikiInfo.style.display = "none";
+        let wasCorrect = false;
+        const resultMessage = document.getElementById("result-message");
 
-        document.getElementById("result-message").style.display = "none"; // Hide result message
+        let happyFace = '<img src="../media/green-smiley.png" alt="Happy">';
+        let sadFace = '<img src="../media/red-sadface.png" alt="Sad">';
+
+        if (selectedName === correctPerson.name) {
+            event.target.style.color = "green";
+            score.correct++;
+            resultMessage.innerHTML = `${happyFace} <span>Spot on! This was ${correctPerson.name}.</span>`;
+            wasCorrect = true;
+        } else {
+            event.target.style.color = "red";
+            score.wrong++;
+            resultMessage.innerHTML = `${sadFace} <span>Oh, no! This was not ${incorrectPerson.name}, it was ${correctPerson.name}.</span>`;
+        }
+
+        resultMessage.style.display = "flex"; // Show message with flexbox
+
+        updateScoreBoard();
+        fetchWikiSummary(correctPerson.name, correctPerson.wikipedia, wasCorrect);
     }
-
-function handleSelection(event) {
-    const selectedName = event.target.textContent;
-    roundPlayed = true;
-
-    document.querySelectorAll(".name-option").forEach(button => {
-        button.disabled = true;
-    });
-
-    let wasCorrect = false;
-    const resultMessage = document.getElementById("result-message");
-
-    let happyFace = '<img src="../media/green-smiley.png" alt="Happy">';
-    let sadFace = '<img src="../media/red-sadface.png" alt="Sad">';
-
-    if (selectedName === correctPerson.name) {
-        event.target.style.color = "green";
-        score.correct++;
-        resultMessage.innerHTML = `${happyFace} <span>Spot on! This was ${correctPerson.name}.</span>`;
-        wasCorrect = true;
-    } else {
-        event.target.style.color = "red";
-        score.wrong++;
-        resultMessage.innerHTML = `${sadFace} <span>Oh, no! This was ${correctPerson.name}, not ${incorrectPerson.name}.</span>`;
-    }
-
-    resultMessage.style.display = "flex"; // Show message with flexbox
-
-    updateScoreBoard();
-    fetchWikiSummary(correctPerson.name, correctPerson.wikipedia, wasCorrect);
-}
-
-
 
 function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
     try {
         const wikiTitle = wikipediaURL.split("/").pop();
+
+        // Hide the name options when the overlay is shown
+        nameOptions.style.display = "none";
+
+        // Render initial overlay immediately (without extract)
+        wikiInfo.innerHTML = `
+            <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}">
+                <p class="description">${correctPerson.description}</p>
+                <h2>${name}</h2>
+                <p id="wiki-extract">Loading Wikipedia summary...</p>
+                <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+            </div>
+        `;
+        wikiInfo.style.display = "block";
+
+        // Now fetch the Wikipedia extract asynchronously
         fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
             .then(response => response.json())
             .then(data => {
-                let extract = data.extract || "No description available from Wikipedia.";
+                let extract = data.extract || "Sorry, there is no intro available from Wikipedia.";
 
-                // Define truncation limits
-                const MAX_WORDS = 60; // Limit by words
-                const MAX_CHARACTERS = 250; // Limit by characters
-
-                // Process extract text to truncate if necessary
-                const words = extract.split(" ");
-                if (words.length > MAX_WORDS || extract.length > MAX_CHARACTERS) {
-                    extract = words.slice(0, MAX_WORDS).join(" ");
-                    if (extract.length > MAX_CHARACTERS) {
-                        extract = extract.substring(0, MAX_CHARACTERS);
-                    }
-                    extract += "...";
+                const MAX_CHARACTERS = 250;
+                if (extract.length > MAX_CHARACTERS) {
+                    extract = extract.substring(0, MAX_CHARACTERS) + "...";
                 }
 
-                // Insert truncated extract into the overlay
-                wikiInfo.innerHTML = `
-                    <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}">
-                        <p class="description">${correctPerson.description}</p>
-                        <h2>${data.title}</h2>
-                        <p>${extract}</p>
-                        <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
-                    </div>
-                `;
-                wikiInfo.style.display = "block";
+                // Update just the extract part
+                const extractElement = document.getElementById("wiki-extract");
+                if (extractElement) {
+                    extractElement.textContent = extract;
+                    extractElement.style.color = "#fff";
+                    extractElement.style.fontStyle = "normal";
+                }
 
                 // Delay the game end check to ensure the last circle is updated
-                setTimeout(checkGameEnd, 1200);
+                setTimeout(checkGameEnd, 0);
             })
             .catch(error => {
-                wikiInfo.innerHTML = `<div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}"><p>${correctPerson.description}</p><p>Could not load Wikipedia info.</p></div>`;
-                wikiInfo.style.display = "block";
-
-                setTimeout(checkGameEnd, 1200);
+                const extractElement = document.getElementById("wiki-extract");
+                if (extractElement) {
+                    extractElement.textContent = "Sorry, I could not load intro from Wikipedia.";
+                }
+                setTimeout(checkGameEnd, 0);
             });
+
     } catch (error) {
         console.error("Error fetching Wikipedia summary:", error);
     }
 }
 
+function checkGameEnd() {
+    let gifURL = "";
+    let messageText = "";
+    if (score.correct >= MAX_ROUNDS) {
+        gifURL = "https://i.pinimg.com/originals/ee/42/d9/ee42d91ece376e6847f6941b72269c76.gif";
+        messageText = "🎉 You won the game! 🎉";
+    } else if (score.wrong >= MAX_ROUNDS) {
+        gifURL = "https://i.pinimg.com/originals/0e/46/23/0e4623557c805b3462daed47c2c0d4b6.gif";
+        messageText = "😢 You lost the game! Try again.";
+    }
+
+    if (gifURL) {
+        setTimeout(() => {
+            const endMessage = document.createElement("div");
+            endMessage.id = "end-message";
+
+            const countdownElement = document.createElement("div");
+            countdownElement.className = "countdown-text";
+            let countdown = 5;
+            countdownElement.textContent = `New game will start in ${countdown} seconds`;
+
+            const interval = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    document.body.removeChild(endMessage);
+                    document.body.style.pointerEvents = "auto";
+                    resetGame();
+                    loadNewRound();
+                    wikiInfo.innerHTML = "";
+                    wikiInfo.style.display = "none";
+                } else {
+                    countdownElement.textContent = `New game will start in ${countdown} seconds`;
+                }
+            }, 1000);
+
+            endMessage.innerHTML = `
+                <div class="end-text">${messageText}</div>
+                <img src="${gifURL}" alt="Game Over">
+            `;
+            endMessage.appendChild(countdownElement);
+
+            // Disable interaction with everything else
+            document.body.style.pointerEvents = "none";
+            endMessage.style.pointerEvents = "none";
+
+            // Also disable interaction with the final overlay
+            const overlay = document.querySelector(".overlay");
+            if (overlay) {
+                overlay.style.pointerEvents = "none";
+                overlay.style.touchAction = "none";
+            }
+
+            document.body.appendChild(endMessage);
+        }, 1600); // Delay before showing end screen
+    }
+}
+
+function resetGame() {
+    score.correct = 0;
+    score.wrong = 0;
+    updateScoreBoard();
+}
+
+function loadNewRound() {
+    if (portraits.length < 2) return;
+    roundPlayed = false;
+
+    const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
+    const selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
+
+    const nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
+    if (nameGroup.length < 2) {
+        loadNewRound();
+        return;
+    }
+
+    nameGroup.sort(() => Math.random() - 0.5);
+    correctPerson = nameGroup[0];
+    incorrectPerson = nameGroup[1];
+
+    const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
+
+    portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
+
+    nameOptions.innerHTML = "";
+    allNames.forEach((name, index) => {
+        const button = document.createElement("name-button");
+        if (name.includes(" ^^^^ ")) {
+            const [name1, name2] = name.split(" ^^^^ ");
+            button.innerHTML = `${name1}<br><span style="font-size: 20px; color: white;">or</span><br>${name2}`;
+        } else {
+            button.textContent = name;
+        }
+        button.classList.add("name-button");
+        button.disabled = false;
+        button.addEventListener("click", handleSelection);
+        nameOptions.appendChild(button);
+
+        if (index === 0 && allNames.length > 1) {
+            const orDivider = document.createElement("div");
+            orDivider.textContent = "OR";
+            orDivider.classList.add("or-divider");
+            nameOptions.appendChild(orDivider);
+        }
+    });
+
+    resultMessage.textContent = "";
+    wikiInfo.innerHTML = "";
+    wikiInfo.style.display = "none";
+
+    nameOptions.style.display = "flex";
+    document.getElementById("result-message").style.display = "none";
+
+    const oldOverlay = document.querySelector(".overlay");
+    if (oldOverlay) {
+        oldOverlay.style.pointerEvents = "auto";
+        oldOverlay.style.touchAction = "auto";
+    }
+}
+
+
+// Main function stuff
     gameContainer.addEventListener("touchend", (event) => {
         if (!event.target.closest("a") && roundPlayed) {
             loadNewRound();

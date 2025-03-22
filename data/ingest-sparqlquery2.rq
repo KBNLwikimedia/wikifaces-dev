@@ -11,3 +11,7 @@ WHERE
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" }
 }
 LIMIT 10000
+
+nquery output nog ombouwen
+van http://commons.wikimedia.org/wiki/Special:FilePath/J.J.%20CALE%20%28cropped%29.jpg
+naar https://commons.wikimedia.org/wiki/Special:Redirect/file/J.J._CALE_%28cropped%29.jpg?width=200
