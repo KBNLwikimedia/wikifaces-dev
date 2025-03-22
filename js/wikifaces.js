@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let incorrectPerson = null;
     let score = { correct: 0, wrong: 0 };
     let roundPlayed = false;
+    let usedNameKeys = new Set();
+    let usedPairs = new Set();
 
     const portraitElement = document.getElementById("portrait");
     const nameOptions = document.getElementById("buttons");
@@ -126,11 +128,14 @@ function showPortraitLoadingSpinner(callback) {
     const img = new Image();
     img.src = correctPerson.image;
     img.onload = () => {
-        portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
-        if (spinner) spinner.style.display = "none";
-        if (typeof callback === 'function') callback();
+        setTimeout(() => { // Wait for fade-out to complete
+            portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
+            if (spinner) spinner.style.display = "none";
+            if (typeof callback === 'function') callback();
+        }, 500); // Match the CSS transition duration
     };
 }
+
 
 function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
     wikiInfo.innerHTML = `
@@ -215,27 +220,18 @@ function getTwoDistinctPeople(group) {
     return [group[firstIndex], group[secondIndex]];
 }
 
-function loadNewRound() {
-    if (portraits.length < 2) return;
-    roundPlayed = false;
+function selectUniquePairFrom(nameGroup) {
+    let pair, pairKey;
+    do {
+        pair = getTwoDistinctPeople(nameGroup);
+        pairKey = [pair[0].depicts, pair[1].depicts].sort().join("|");
+    } while (usedPairs.has(pairKey));
 
-    const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
-    const selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
+    usedPairs.add(pairKey);
+    return pair;
+}
 
-    const nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
-    if (nameGroup.length < 2) {
-        loadNewRound();
-        return;
-    }
-
-    [correctPerson, incorrectPerson] = getTwoDistinctPeople(nameGroup);
-
-    const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
-
-    resultMessage.textContent = "";
-    wikiInfo.innerHTML = "";
-    wikiInfo.style.display = "none";
-
+function createNameButtons(allNames) {
     nameOptions.innerHTML = "";
     const nameWrapper = document.createElement("div");
     nameWrapper.classList.add("name-wrapper");
@@ -257,7 +253,48 @@ function loadNewRound() {
     });
 
     nameOptions.appendChild(nameWrapper);
-    nameOptions.style.display = "none";
+}
+
+
+function preloadPortraitImage(src, onLoad) {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => onLoad();
+}
+
+function showPortraitImage(callback) {
+    const spinner = document.getElementById("portrait-spinner");
+    if (spinner) spinner.style.display = "none";
+
+    portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
+    portraitElement.classList.add("fade-in");
+    setTimeout(() => {
+        portraitElement.classList.remove("fade-in");
+        if (typeof callback === 'function') callback();
+    }, 500);
+}
+
+function loadNewRound() {
+    if (portraits.length < 2) return;
+    roundPlayed = false;
+
+    const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
+    let selectedNameKey, nameGroup;
+
+    do {
+        selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
+    } while (usedNameKeys.has(selectedNameKey));
+
+    usedNameKeys.add(selectedNameKey);
+    nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
+    if (nameGroup.length < 2) return loadNewRound();
+
+    [correctPerson, incorrectPerson] = selectUniquePairFrom(nameGroup);
+    const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
+
+    resultMessage.textContent = "";
+    wikiInfo.innerHTML = "";
+    wikiInfo.style.display = "none";
     document.getElementById("result-message").style.display = "none";
 
     const oldOverlay = document.querySelector(".overlay");
@@ -266,10 +303,26 @@ function loadNewRound() {
         oldOverlay.style.touchAction = "auto";
     }
 
-    showPortraitLoadingSpinner(() => {
-        nameOptions.style.display = "flex";
+    createNameButtons(allNames);
+    nameOptions.style.display = "none";
+
+    const spinner = document.getElementById("portrait-spinner");
+    if (spinner) spinner.style.display = "block";
+
+    preloadPortraitImage(correctPerson.image, () => {
+        portraitElement.classList.add("fade-out");
+        nameOptions.classList.add("fade-out");
+
+        setTimeout(() => {
+            portraitElement.classList.remove("fade-out");
+            nameOptions.classList.remove("fade-out");
+            showPortraitImage(() => {
+                nameOptions.style.display = "flex";
+            });
+        }, 500);
     });
 }
+
 
 function checkGameEnd() {
     let gifURL = "";

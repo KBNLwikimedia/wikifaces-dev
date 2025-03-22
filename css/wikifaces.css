@@ -276,6 +276,19 @@ body {
     height: auto; /* Maintains aspect ratio */
 }
 
+/* Fades the element out by reducing opacity */
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+/* Fades the element in by increasing opacity */
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.5s ease-in;
+}
+
+
 #end-message {
     position: fixed;
     top: 50px;
