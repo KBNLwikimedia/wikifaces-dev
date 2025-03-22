@@ -117,9 +117,9 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
 
         // Render initial overlay immediately (without extract)
         wikiInfo.innerHTML = `
-            <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}">
+            <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
                 <button id="next-round-button" class="next-round-button">
-                    <img src="media/play-xxl.png" alt="Next Round" class="play-icon">
+                    <img src="media/play-button.png" alt="Next Round" class="play-icon">
                 </button>
                 <p class="description">${correctPerson.description}</p>
                 <h2>${name}</h2>
@@ -137,6 +137,33 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
                 wikiInfo.innerHTML = "";
                 wikiInfo.style.display = "none";
             });
+        }
+
+        // Add swipe detection on portrait and overlay
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        function handleTouchStart(event) {
+            touchStartY = event.changedTouches[0].screenY;
+        }
+
+        function handleTouchEnd(event) {
+            touchEndY = event.changedTouches[0].screenY;
+            if (touchStartY - touchEndY > 50 && roundPlayed) { // swipe up
+                loadNewRound();
+                wikiInfo.innerHTML = "";
+                wikiInfo.style.display = "none";
+            }
+        }
+
+        const overlayElement = document.getElementById("overlay");
+        if (overlayElement) {
+            overlayElement.addEventListener("touchstart", handleTouchStart);
+            overlayElement.addEventListener("touchend", handleTouchEnd);
+        }
+        if (portraitElement) {
+            portraitElement.addEventListener("touchstart", handleTouchStart);
+            portraitElement.addEventListener("touchend", handleTouchEnd);
         }
 
         // Now fetch the Wikipedia extract asynchronously
@@ -173,6 +200,7 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
         console.error("Error fetching Wikipedia summary:", error);
     }
 }
+
 
 function checkGameEnd() {
     let gifURL = "";

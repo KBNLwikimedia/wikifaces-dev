@@ -113,7 +113,10 @@ body {
     border: 0px solid magenta;
     border-top: 1px solid white;
     border-bottom: 1px solid white;
-      pointer-events: none;
+      /* pointer-events: none; */
+    touch-action: manipulation; /* Enables tap, swipe, and pinch gestures */
+    -webkit-user-select: none;  /* Prevents text selection on iOS Safari */
+    user-select: none;
 }
 
 .overlay-disabled {
@@ -121,12 +124,12 @@ body {
   touch-action: none;
 }
 
-
 /* Ensure .description inside .overlay p is italic and smaller */
 .overlay p.description {
     font-size: 16px; /* Make it smaller */
     font-style: italic; /* Make it italic */
     padding: 10px 0px 3px 0px; /* TOP RIGHT BOTTOM LEFT; */
+    width=70%;
 }
 
 .overlay h2 {
