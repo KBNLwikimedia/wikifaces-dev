@@ -86,6 +86,15 @@ body {
     justify-content: center;
 }
 
+.score-label {
+  font-weight: bold;
+  color: white;
+  margin-right: 10px;
+  font-size: 12px;
+  padding: 2px 0px 3px 0px; /* TOP RIGHT BOTTOM LEFT; */
+}
+
+
 /* Default light colors */
 .light-green {
     background-color: #a0e7a9;
