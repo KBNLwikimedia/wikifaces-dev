@@ -208,7 +208,7 @@ function checkGameEnd() {
                 } else {
                     countdownElement.textContent = `New game will start in ${countdown} seconds`;
                 }
-            }, 1000);
+            }, 0);
 
             endMessage.innerHTML = `
                 <div class="end-text">${messageText}</div>
