@@ -13,6 +13,7 @@ body {
     font-family: 'Source Sans Pro', sans-serif;
     overflow: hidden;
     height: 100vh;
+    -webkit-tap-highlight-color: transparent;
     /* border: 3px solid green; */
 }
 
@@ -36,6 +37,9 @@ body {
     background-position: center;
     filter: brightness(70%);
     z-index: -1;
+    touch-action: manipulation;  /* Allow swipe/tap gestures */
+    -webkit-user-select: none;   /* Prevent text selection on iOS */
+    user-select: none;
 }
 
 /* Scoreboard container */
@@ -133,7 +137,7 @@ body {
 }
 
 .overlay h2 {
-    font-size: 30px;
+    font-size: 34px;
     color: #ffffff;
     text-decoration: none;
     font-weight: 600;
@@ -144,7 +148,7 @@ body {
 }
 
 .overlay p {
-    font-size: 18px;
+    font-size: 22px;
     color: #fff;
     padding: 0px 0px 20px 0px; /* TOP RIGHT BOTTOM LEFT; */
 }
@@ -158,15 +162,18 @@ body {
 
 /* Ensure Wikipedia link is styled correctly */
 .overlay a.wikipedia-link {
-    font-size: 20px;
-    color: #ffffff;
-    text-decoration: none;
-    font-weight: 600;
-    display: inline-block; /* Allows padding to increase click area */
-    padding: 10px 0px 10px 0px; /* TOP RIGHT BOTTOM LEFT; */
-    background-color: rgba(0, 0, 0, 0); /* Light background */
-    border-radius: 5px; /* Rounds corners */
-    pointer-events: auto;
+  font-size: 22px;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+  padding: 10px 10px 10px 10px; /* top, right, bottom, left */
+  background-color: rgba(0, 0, 0, 0);
+  border-radius: 5px;
+  pointer-events: auto;
+  border: 0px solid white;
+  width: fit-content;          /* Shrinks to fit content */
+  max-width: 90%;              /* Prevents it from getting too wide on long text */
 }
 
 
@@ -178,29 +185,6 @@ body {
 /* Reddish transparent overlay for incorrect answers */
 .overlay-wrong {
     background: rgba(200, 0, 0, 0.4);
-}
-
-.next-round-button {
-  position: absolute;
-  top: 15px;
-  right: 10px;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  z-index: 10;
-}
-
-.next-round-button:active .play-icon {
-  transform: scale(0.9);
-}
-
-.play-icon {
-  width: 50px;
-  height: 50px;
-  transition: transform 0.5s ease;
-  pointer-events: auto;
-  filter: brightness(0.3); /* Makes the image appear darker */
 }
 
 /* Name Buttons */

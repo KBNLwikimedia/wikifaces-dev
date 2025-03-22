@@ -111,95 +111,86 @@ document.addEventListener("DOMContentLoaded", function () {
 function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
     try {
         const wikiTitle = wikipediaURL.split("/").pop();
-
-        // Hide the name options when the overlay is shown
         nameOptions.style.display = "none";
 
-        // Render initial overlay immediately (without extract)
-        wikiInfo.innerHTML = `
-            <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-                <button id="next-round-button" class="next-round-button">
-                    <img src="media/play-button.png" alt="Next Round" class="play-icon">
-                </button>
-                <p class="description">${correctPerson.description}</p>
-                <h2>${name}</h2>
-                <p id="wiki-extract">Loading Wikipedia summary...</p>
-                <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
-            </div>
-        `;
-        wikiInfo.style.display = "block";
-
-        // Add event listener to play button
-        const nextButton = document.getElementById("next-round-button");
-        if (nextButton) {
-            nextButton.addEventListener("click", () => {
-                loadNewRound();
-                wikiInfo.innerHTML = "";
-                wikiInfo.style.display = "none";
-            });
-        }
-
-        // Add swipe detection on portrait and overlay
-        let touchStartY = 0;
-        let touchEndY = 0;
-
-        function handleTouchStart(event) {
-            touchStartY = event.changedTouches[0].screenY;
-        }
-
-        function handleTouchEnd(event) {
-            touchEndY = event.changedTouches[0].screenY;
-            if (touchStartY - touchEndY > 50 && roundPlayed) { // swipe up
-                loadNewRound();
-                wikiInfo.innerHTML = "";
-                wikiInfo.style.display = "none";
-            }
-        }
-
-        const overlayElement = document.getElementById("overlay");
-        if (overlayElement) {
-            overlayElement.addEventListener("touchstart", handleTouchStart);
-            overlayElement.addEventListener("touchend", handleTouchEnd);
-        }
-        if (portraitElement) {
-            portraitElement.addEventListener("touchstart", handleTouchStart);
-            portraitElement.addEventListener("touchend", handleTouchEnd);
-        }
-
-        // Now fetch the Wikipedia extract asynchronously
-        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
-            .then(response => response.json())
-            .then(data => {
-                let extract = data.extract || "Sorry, there is no intro available from Wikipedia.";
-
-                const MAX_CHARACTERS = 250;
-                if (extract.length > MAX_CHARACTERS) {
-                    extract = extract.substring(0, MAX_CHARACTERS) + "...";
-                }
-
-                // Update just the extract part
-                const extractElement = document.getElementById("wiki-extract");
-                if (extractElement) {
-                    extractElement.textContent = extract;
-                    extractElement.style.color = "#fff";
-                    extractElement.style.fontStyle = "normal";
-                }
-
-                // Delay the game end check to ensure the last circle is updated
-                setTimeout(checkGameEnd, 0);
-            })
-            .catch(error => {
-                const extractElement = document.getElementById("wiki-extract");
-                if (extractElement) {
-                    extractElement.textContent = "Sorry, I could not load intro from Wikipedia.";
-                }
-                setTimeout(checkGameEnd, 0);
-            });
+        renderInitialOverlay(name, wikipediaURL, wasCorrect);
+        addSwipeListeners();
+        fetchWikiExtract(wikiTitle);
 
     } catch (error) {
         console.error("Error fetching Wikipedia summary:", error);
     }
 }
+
+function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
+    wikiInfo.innerHTML = `
+        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
+            <p class="description">${correctPerson.description}</p>
+            <h2>${name}</h2>
+            <p id="wiki-extract">Loading Wikipedia summary...</p>
+            <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+        </div>
+    `;
+    wikiInfo.style.display = "block";
+}
+
+function addSwipeListeners() {
+    let touchStartY = 0;
+    let touchEndY = 0;
+
+    function handleTouchStart(event) {
+        touchStartY = event.changedTouches[0].screenY;
+    }
+
+    function handleTouchEnd(event) {
+        touchEndY = event.changedTouches[0].screenY;
+        if (touchStartY - touchEndY > 50 && roundPlayed) {
+            loadNewRound();
+            wikiInfo.innerHTML = "";
+            wikiInfo.style.display = "none";
+        }
+    }
+
+    const overlayElement = document.getElementById("overlay");
+    if (overlayElement) {
+        overlayElement.addEventListener("touchstart", handleTouchStart);
+        overlayElement.addEventListener("touchend", handleTouchEnd);
+    }
+    if (portraitElement) {
+        portraitElement.addEventListener("touchstart", handleTouchStart);
+        portraitElement.addEventListener("touchend", handleTouchEnd);
+    }
+}
+
+function fetchWikiExtract(wikiTitle) {
+    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
+        .then(response => response.json())
+        .then(data => {
+            let extract = data.extract || "Sorry, there is no intro available from Wikipedia.";
+            const MAX_CHARACTERS = 250;
+
+            if (extract.length > MAX_CHARACTERS) {
+                extract = extract.substring(0, MAX_CHARACTERS) + "...";
+            }
+
+            const extractElement = document.getElementById("wiki-extract");
+            if (extractElement) {
+                extractElement.textContent = extract;
+                extractElement.style.color = "#fff";
+                extractElement.style.fontStyle = "normal";
+            }
+
+            setTimeout(checkGameEnd, 0);
+        })
+        .catch(error => {
+            const extractElement = document.getElementById("wiki-extract");
+            if (extractElement) {
+                extractElement.textContent = "Sorry, I could not load intro from Wikipedia.";
+            }
+            setTimeout(checkGameEnd, 0);
+        });
+}
+
 
 
 function checkGameEnd() {
