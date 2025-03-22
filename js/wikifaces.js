@@ -12,11 +12,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const SWIPE_THRESHOLD = 100;           // Minimum swipe distance to trigger next round
 
     // Not sure if I understand the following constants exactly and correctly
-    const SWIPE_INTERACTION_UNLOCK_DELAY = 0; // Delay before interaction unlock after swipe (ms)
-    const OVERLAY_CLICK_LOCK_TIME = 0;     // Delay before overlay becomes clickable
-    const RESULT_INTERACTION_LOCK = 0;      // Delay before next interaction allowed after result banner is shown (ms)
-    const OVERLAY_INTERACTION_DELAY = 0; // How long the overlay stays non-clickable after it's shown (ms)
-    const NEXT_ROUND_UNLOCK_TIME = 0;      // Time during which rapid-fire clicks on overlay are disabled
+    const OVERLAY_INTERACTION_DELAY = 500; // This defines how long the overlay stays non-clickable after it appears — to avoid accidental double-taps or clicks too early.
+    const SWIPE_INTERACTION_UNLOCK_DELAY = 500; // After the user performs a swipe (to move to the next round), this defines how long to wait before allowing another interaction — such as a new swipe or click
+    const NEXT_ROUND_UNLOCK_TIME = 500;      //Controls the delay between when the overlay is shown and when the user is allowed to click it to start the next round.
+    const RESULT_INTERACTION_LOCK = 500;     // When the result banner is shown (✅ or ❌), this defines how long interaction is locked afterward to prevent double-pressing or skipping too quickly.
 
     // Need to better understand the following constants
     const GAME_END_DISPLAY_DELAY = 1600;   // Delay before showing win/loss GIF (ms)
