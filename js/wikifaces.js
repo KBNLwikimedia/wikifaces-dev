@@ -74,8 +74,6 @@ document.addEventListener("DOMContentLoaded", function () {
         scoreBoard.appendChild(wrongRow);
     }
 
-
-
     // Whether th user selected the correct name or not
     function handleSelection(event) {
         const selectedName = event.target.textContent;
@@ -121,7 +119,7 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
     }
 }
 
-function showPortraitLoadingSpinner() {
+function showPortraitLoadingSpinner(callback) {
     const spinner = document.getElementById("portrait-spinner");
     if (spinner) spinner.style.display = "block";
 
@@ -130,6 +128,7 @@ function showPortraitLoadingSpinner() {
     img.onload = () => {
         portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
         if (spinner) spinner.style.display = "none";
+        if (typeof callback === 'function') callback();
     };
 }
 
@@ -204,6 +203,73 @@ function fetchWikiExtract(wikiTitle) {
 }
 
 
+function getTwoDistinctPeople(group) {
+    if (group.length < 2) return [null, null];
+
+    let firstIndex = Math.floor(Math.random() * group.length);
+    let secondIndex;
+    do {
+        secondIndex = Math.floor(Math.random() * group.length);
+    } while (secondIndex === firstIndex);
+
+    return [group[firstIndex], group[secondIndex]];
+}
+
+function loadNewRound() {
+    if (portraits.length < 2) return;
+    roundPlayed = false;
+
+    const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
+    const selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
+
+    const nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
+    if (nameGroup.length < 2) {
+        loadNewRound();
+        return;
+    }
+
+    [correctPerson, incorrectPerson] = getTwoDistinctPeople(nameGroup);
+
+    const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
+
+    resultMessage.textContent = "";
+    wikiInfo.innerHTML = "";
+    wikiInfo.style.display = "none";
+
+    nameOptions.innerHTML = "";
+    const nameWrapper = document.createElement("div");
+    nameWrapper.classList.add("name-wrapper");
+
+    allNames.forEach((name, index) => {
+        const button = document.createElement("name-button");
+        button.textContent = name;
+        button.classList.add("name-button");
+        button.disabled = false;
+        button.addEventListener("click", handleSelection);
+        nameWrapper.appendChild(button);
+
+        if (index === 0 && allNames.length > 1) {
+            const orDivider = document.createElement("div");
+            orDivider.textContent = "OR";
+            orDivider.classList.add("or-divider");
+            nameWrapper.appendChild(orDivider);
+        }
+    });
+
+    nameOptions.appendChild(nameWrapper);
+    nameOptions.style.display = "none";
+    document.getElementById("result-message").style.display = "none";
+
+    const oldOverlay = document.querySelector(".overlay");
+    if (oldOverlay) {
+        oldOverlay.style.pointerEvents = "auto";
+        oldOverlay.style.touchAction = "auto";
+    }
+
+    showPortraitLoadingSpinner(() => {
+        nameOptions.style.display = "flex";
+    });
+}
 
 function checkGameEnd() {
     let gifURL = "";
@@ -267,80 +333,6 @@ function resetGame() {
     score.correct = 0;
     score.wrong = 0;
     updateScoreBoard();
-}
-
-
-function getTwoDistinctPeople(group) {
-    if (group.length < 2) return [null, null];
-
-    let firstIndex = Math.floor(Math.random() * group.length);
-    let secondIndex;
-    do {
-        secondIndex = Math.floor(Math.random() * group.length);
-    } while (secondIndex === firstIndex);
-
-    return [group[firstIndex], group[secondIndex]];
-}
-
-function loadNewRound() {
-    if (portraits.length < 2) return;
-    roundPlayed = false;
-
-    const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
-    const selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
-
-    const nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
-    if (nameGroup.length < 2) {
-        loadNewRound();
-        return;
-    }
-
-    [correctPerson, incorrectPerson] = getTwoDistinctPeople(nameGroup);
-
-    const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
-
-    nameOptions.innerHTML = "";
-    const nameWrapper = document.createElement("div");
-    nameWrapper.classList.add("name-wrapper");
-
-    allNames.forEach((name, index) => {
-        const button = document.createElement("name-button");
-        button.textContent = name;
-        button.classList.add("name-button");
-        button.disabled = false;
-        button.addEventListener("click", handleSelection);
-        nameWrapper.appendChild(button);
-
-        if (index === 0 && allNames.length > 1) {
-            const orDivider = document.createElement("div");
-            orDivider.textContent = "OR";
-            orDivider.classList.add("or-divider");
-
-            const spinner = document.createElement("div");
-            spinner.id = "portrait-spinner";
-            spinner.classList.add("portrait-spinner");
-
-            nameWrapper.appendChild(orDivider);
-            nameWrapper.appendChild(spinner);
-        }
-    });
-
-    nameOptions.appendChild(nameWrapper);
-
-    resultMessage.textContent = "";
-    wikiInfo.innerHTML = "";
-    wikiInfo.style.display = "none";
-
-    nameOptions.style.display = "flex";
-    document.getElementById("result-message").style.display = "none";
-
-    const oldOverlay = document.querySelector(".overlay");
-    if (oldOverlay) {
-        oldOverlay.style.pointerEvents = "auto";
-        oldOverlay.style.touchAction = "auto";
-    }
-
-    showPortraitLoadingSpinner();
 }
 
 
