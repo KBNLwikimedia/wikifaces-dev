@@ -112,7 +112,6 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
     try {
         const wikiTitle = wikipediaURL.split("/").pop();
         nameOptions.style.display = "none";
-
         renderInitialOverlay(name, wikipediaURL, wasCorrect);
         addSwipeListeners();
         fetchWikiExtract(wikiTitle);
@@ -120,6 +119,18 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
     } catch (error) {
         console.error("Error fetching Wikipedia summary:", error);
     }
+}
+
+function showPortraitLoadingSpinner() {
+    const spinner = document.getElementById("portrait-spinner");
+    if (spinner) spinner.style.display = "block";
+
+    const img = new Image();
+    img.src = correctPerson.image;
+    img.onload = () => {
+        portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
+        if (spinner) spinner.style.display = "none";
+    };
 }
 
 function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
@@ -161,6 +172,7 @@ function addSwipeListeners() {
         portraitElement.addEventListener("touchend", handleTouchEnd);
     }
 }
+
 
 function fetchWikiExtract(wikiTitle) {
     fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
@@ -257,6 +269,19 @@ function resetGame() {
     updateScoreBoard();
 }
 
+
+function getTwoDistinctPeople(group) {
+    if (group.length < 2) return [null, null];
+
+    let firstIndex = Math.floor(Math.random() * group.length);
+    let secondIndex;
+    do {
+        secondIndex = Math.floor(Math.random() * group.length);
+    } while (secondIndex === firstIndex);
+
+    return [group[firstIndex], group[secondIndex]];
+}
+
 function loadNewRound() {
     if (portraits.length < 2) return;
     roundPlayed = false;
@@ -270,35 +295,37 @@ function loadNewRound() {
         return;
     }
 
-    nameGroup.sort(() => Math.random() - 0.5);
-    correctPerson = nameGroup[0];
-    incorrectPerson = nameGroup[1];
+    [correctPerson, incorrectPerson] = getTwoDistinctPeople(nameGroup);
 
     const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
 
-    portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
-
     nameOptions.innerHTML = "";
+    const nameWrapper = document.createElement("div");
+    nameWrapper.classList.add("name-wrapper");
+
     allNames.forEach((name, index) => {
         const button = document.createElement("name-button");
-        if (name.includes(" ^^^^ ")) {
-            const [name1, name2] = name.split(" ^^^^ ");
-            button.innerHTML = `${name1}<br><span style="font-size: 20px; color: white;">or</span><br>${name2}`;
-        } else {
-            button.textContent = name;
-        }
+        button.textContent = name;
         button.classList.add("name-button");
         button.disabled = false;
         button.addEventListener("click", handleSelection);
-        nameOptions.appendChild(button);
+        nameWrapper.appendChild(button);
 
         if (index === 0 && allNames.length > 1) {
             const orDivider = document.createElement("div");
             orDivider.textContent = "OR";
             orDivider.classList.add("or-divider");
-            nameOptions.appendChild(orDivider);
+
+            const spinner = document.createElement("div");
+            spinner.id = "portrait-spinner";
+            spinner.classList.add("portrait-spinner");
+
+            nameWrapper.appendChild(orDivider);
+            nameWrapper.appendChild(spinner);
         }
     });
+
+    nameOptions.appendChild(nameWrapper);
 
     resultMessage.textContent = "";
     wikiInfo.innerHTML = "";
@@ -312,6 +339,8 @@ function loadNewRound() {
         oldOverlay.style.pointerEvents = "auto";
         oldOverlay.style.touchAction = "auto";
     }
+
+    showPortraitLoadingSpinner();
 }
 
 

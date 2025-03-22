@@ -42,6 +42,20 @@ body {
     user-select: none;
 }
 
+#portrait-spinner {
+  position: fixed;               /* Stick to the viewport */
+  top: 18px;                     /* 10px from the top */
+  left: 50%;                     /* Move to horizontal center */
+  transform: translateX(-50%);   /* Truly center horizontally */
+  z-index: 999;                  /* Ensure it's above other elements */
+  width: 50px;
+  height: 50px;
+  background: url('../media/loading-spinner.gif') no-repeat center center;
+  background-size: contain;
+  display: none;
+  pointer-events: none;
+}
+
 /* Scoreboard container */
 #score-board {
     position: fixed;
@@ -167,7 +181,7 @@ body {
   text-decoration: none;
   font-weight: 600;
   display: inline-block;
-  padding: 10px 10px 10px 10px; /* top, right, bottom, left */
+  padding: 10px 10px 10px 0px; /* top, right, bottom, left */
   background-color: rgba(0, 0, 0, 0);
   border-radius: 5px;
   pointer-events: auto;
@@ -201,11 +215,11 @@ body {
   gap: 10px;                   /* Space between buttons */
   text-align: center;
   pointer-events: auto;
+  z-index: 10;
 }
 
 .name-button {
   background: none;
-  border: none;
   color: white;
   font-size: 40px;
   font-weight: bold;
@@ -213,6 +227,7 @@ body {
   text-align: center;
   white-space: pre-line;
   cursor: pointer;
+  padding: 10px 20px 10px 20px; /* top, right, bottom, left */
 }
 
 .or-divider {
