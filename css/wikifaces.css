@@ -48,7 +48,7 @@ body {
     align-items: center;
     gap: 5px;
     border: 0px solid red;
-    z-index: 9999; /* Ensures it stays above other elements */
+    z-index: 999; /* Ensures it stays above other elements */
     pointer-events: none; /* Prevents clicks */
 }
 
@@ -200,10 +200,6 @@ body {
   pointer-events: auto;
 }
 
-
-
-
-
 /* Name Buttons */
 #buttons {
   position: fixed;
@@ -246,21 +242,16 @@ body {
   cursor: pointer;
 }
 
-
-.name-option:hover {
-    background-color: #bbb;
-}
-
-.name-option:disabled {
+.name-button:disabled {
     display: none;
 }
 
 #result-message {
     position: fixed;
-    top: 90px;
+    top: 7px;
     left: 50%;
     transform: translateX(-50%); /* Horizontal centering */
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(5px);
     background: rgba(0, 0, 0, 0.2);
     color: white;
     font: bold 20px sans-serif; /* Combines font-size & font-weight */
@@ -269,7 +260,7 @@ body {
     text-align: center;
     display: none; /* Initially hidden */
     pointer-events: none;
-    z-index: 9;
+    z-index: 1001;
     /* Flex layout for centered content */
     display: flex;
     align-items: center;
@@ -279,13 +270,13 @@ body {
 }
 
 #result-message img {
-    width: 30px; /* Adjusts icon size */
+    width: 40px; /* Adjusts icon size */
     height: auto; /* Maintains aspect ratio */
 }
 
 #end-message {
     position: fixed;
-    top: 200px;
+    top: 50px;
     left: 0;
     width: 100%;
     height: 100px;
