@@ -1,25 +1,27 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const MAX_ROUNDS = 5; // Configurable number of rounds
+    const MAX_ROUNDS = 5; // Configurable number of rounds = number of circles in the scoreboard
     const MAX_CHARACTERS = 250;
 
     // === Global Timeout Configurations - in milliseconds ===
     const NEW_ROUND_FADE_DELAY = 0; // Delay before revealing portrait and buttons
-    const IMAGE_LOAD_TIMEOUT = 5000;       // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
     const FADE_DURATION = 500;            // Interval between showing the portrait ans showing the name buttons
+
+    const IMAGE_LOAD_TIMEOUT = 5000;       // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
     const IMAGE_ERROR_DISPLAY_DURATION = 1000; // How long the image loading error message is shown (ms)
 
     const SWIPE_THRESHOLD = 100;           // Minimum swipe distance to trigger next round
 
+    // Not sure if I understand the following constants exactly and correctly
     const SWIPE_INTERACTION_UNLOCK_DELAY = 0; // Delay before interaction unlock after swipe (ms)
     const OVERLAY_CLICK_LOCK_TIME = 0;     // Delay before overlay becomes clickable
     const RESULT_INTERACTION_LOCK = 0;      // Delay before next interaction allowed after result banner is shown (ms)
     const OVERLAY_INTERACTION_DELAY = 0; // How long the overlay stays non-clickable after it's shown (ms)
     const NEXT_ROUND_UNLOCK_TIME = 0;      // Time during which rapid-fire clicks on overlay are disabled
 
+    // Need to better understand the following constants
     const GAME_END_DISPLAY_DELAY = 1600;   // Delay before showing win/loss GIF (ms)
     const GAME_END_COUNTDOWN_START = 5;       // Countdown seconds after game ends and new game begin
     const GAME_END_INTERVAL_DELAY = 1000;  // Countdown tick interval (ms)
-
 
     let portraits = [];
     let correctPerson = null;
