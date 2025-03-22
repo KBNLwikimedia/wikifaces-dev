@@ -88,8 +88,8 @@ document.addEventListener("DOMContentLoaded", function () {
         let wasCorrect = false;
         const resultMessage = document.getElementById("result-message");
 
-        let happyFace = '<img src="../media/green-smiley.png" alt="Happy">';
-        let sadFace = '<img src="../media/red-sadface.png" alt="Sad">';
+        let happyFace = '<img src="media/green-smiley.png" alt="Happy">';
+        let sadFace = '<img src="media/red-sadface.png" alt="Sad">';
 
         if (selectedName === correctPerson.name) {
             event.target.style.color = "green";
