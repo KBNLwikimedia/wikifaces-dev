@@ -118,6 +118,9 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
         // Render initial overlay immediately (without extract)
         wikiInfo.innerHTML = `
             <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}">
+                <button id="next-round-button" class="next-round-button">
+                    <img src="media/play-xxl.png" alt="Next Round" class="play-icon">
+                </button>
                 <p class="description">${correctPerson.description}</p>
                 <h2>${name}</h2>
                 <p id="wiki-extract">Loading Wikipedia summary...</p>
@@ -125,6 +128,16 @@ function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
             </div>
         `;
         wikiInfo.style.display = "block";
+
+        // Add event listener to play button
+        const nextButton = document.getElementById("next-round-button");
+        if (nextButton) {
+            nextButton.addEventListener("click", () => {
+                loadNewRound();
+                wikiInfo.innerHTML = "";
+                wikiInfo.style.display = "none";
+            });
+        }
 
         // Now fetch the Wikipedia extract asynchronously
         fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)

@@ -113,6 +113,7 @@ body {
     border: 0px solid magenta;
     border-top: 1px solid white;
     border-bottom: 1px solid white;
+      pointer-events: none;
 }
 
 .overlay-disabled {
@@ -163,6 +164,7 @@ body {
     padding: 10px 0px 10px 0px; /* TOP RIGHT BOTTOM LEFT; */
     background-color: rgba(0, 0, 0, 0); /* Light background */
     border-radius: 5px; /* Rounds corners */
+    pointer-events: auto;
 }
 
 
@@ -176,7 +178,33 @@ body {
     background: rgba(200, 0, 0, 0.4);
 }
 
-/* Buttons */
+.next-round-button {
+  position: absolute;
+  top: 15px;
+  right: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.next-round-button:active .play-icon {
+  transform: scale(0.92);
+}
+
+.play-icon {
+  width: 42px;
+  height: 42px;
+  transition: transform 0.5s ease;
+  pointer-events: auto;
+}
+
+
+
+
+
+/* Name Buttons */
 #buttons {
   position: fixed;
   top: 0;
