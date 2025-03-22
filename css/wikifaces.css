@@ -243,11 +243,6 @@ body {
     cursor: pointer;
 }
 
-.overlay-disabled {
-  pointer-events: none;
-  touch-action: none;
-}
-
 /* Ensure .description inside .overlay p is italic and smaller */
 .overlay p.description {
     font-size: 16px; /* Make it smaller */
@@ -296,7 +291,6 @@ body {
   width: fit-content;          /* Shrinks to fit content */
   max-width: 90%;              /* Prevents it from getting too wide on long text */
 }
-
 
 /* Greenish transparent overlay for correct answers */
 .overlay-correct {

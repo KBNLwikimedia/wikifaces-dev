@@ -226,49 +226,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * Renders the initial overlay with person description and placeholder extract.
-     */
-    function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
-      // 1. Inject the HTML
-      wikiInfo.innerHTML = `
-        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-          <p class="description">${correctPerson.description}</p>
-          <h2>${name}</h2>
-          <p id="wiki-extract">Loading Wikipedia summary...</p>
-          <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
-        </div>
-      `;
-      wikiInfo.style.display = "block";
-
-      // 2. Attach the click listener *after* HTML is injected
-      const overlay = document.getElementById("overlay");
-      if (overlay) {
-        // 🔒 Temporarily lock pointer interaction and next round
-        overlay.style.pointerEvents = "none";
-        overlay.style.touchAction = "none";
-        nextRoundLocked = true;
-
-        // 🔁 Re-enable everything after 1000ms
-        setTimeout(() => {
-          overlay.style.pointerEvents = "auto";
-          overlay.style.touchAction = "auto";
-          nextRoundLocked = false;
-        }, NEXT_ROUND_UNLOCK_TIME);
-
-        // 🖱️ Overlay click to trigger next round
-        overlay.addEventListener("click", () => {
-          if (roundPlayed && !nextRoundLocked) {
-            loadNewRound();
-            wikiInfo.innerHTML = "";
-            wikiInfo.style.display = "none";
-          }
-        });
-      }
-    }
-
-
-
-    /**
      * Displays the loaded portrait image with a fade-in effect.
      * @param {function} callback - Function to call after image is shown.
      */
@@ -285,38 +242,99 @@ document.addEventListener("DOMContentLoaded", function () {
         }, FADE_DURATION);
     }
 
+    /**
+     * Attaches click behavior to the overlay for moving to the next round.
+     * Called immediately after injecting overlay into the DOM.
+     */
+    function attachOverlayClickHandler() {
+      const overlay = document.getElementById("overlay");
+      if (!overlay) return;
+
+      overlay.style.pointerEvents = "none";
+      overlay.style.touchAction = "none";
+      nextRoundLocked = true;
+
+      setTimeout(() => {
+        overlay.style.pointerEvents = "auto";
+        overlay.style.touchAction = "auto";
+        nextRoundLocked = false;
+      }, NEXT_ROUND_UNLOCK_TIME);
+
+      overlay.addEventListener("click", () => {
+        if (roundPlayed && !nextRoundLocked) {
+          loadNewRound();
+          wikiInfo.innerHTML = "";
+          wikiInfo.style.display = "none";
+        }
+      });
+    }
+
 
     /**
      * Adds swipe listeners to allow navigating to the next round.
      */
-    function addSwipeListeners() {
-        let touchStartY = 0;
-        let touchEndY = 0;
+     function addSwipeListeners() {
+      let touchStartY = 0;
+      let touchEndY = 0;
 
-        function handleTouchStart(event) {
-            touchStartY = event.changedTouches[0].screenY;
-        }
+      const overlay = document.getElementById("overlay");
 
-        function handleTouchEnd(event) {
-            touchEndY = event.changedTouches[0].screenY;
-            if (touchStartY - touchEndY > SWIPE_THRESHOLD && roundPlayed && !interactionLocked) {
-                interactionLocked = true;
-                loadNewRound();
-                resetOverlayState();
-                setTimeout(() => interactionLocked = false, SWIPE_INTERACTION_UNLOCK_DELAY);
-            }
-        }
+      function handleTouchStart(event) {
+        touchStartY = event.changedTouches[0].screenY;
+      }
 
-        const overlayElement = document.getElementById("overlay");
-        if (overlayElement) {
-            overlayElement.addEventListener("touchstart", handleTouchStart);
-            overlayElement.addEventListener("touchend", handleTouchEnd);
+      function handleTouchEnd(event) {
+        touchEndY = event.changedTouches[0].screenY;
+
+        if (
+          touchStartY - touchEndY > SWIPE_THRESHOLD &&
+          roundPlayed &&
+          !interactionLocked &&
+          !nextRoundLocked
+        ) {
+          nextRoundLocked = true;
+
+          loadNewRound();
+          wikiInfo.innerHTML = "";
+          wikiInfo.style.display = "none";
+
+          // Unlock next round after transition
+          setTimeout(() => {
+            nextRoundLocked = false;
+          }, NEXT_ROUND_UNLOCK_TIME);
         }
-        if (portraitElement) {
-            portraitElement.addEventListener("touchstart", handleTouchStart);
-            portraitElement.addEventListener("touchend", handleTouchEnd);
-        }
+      }
+
+      if (overlay) {
+        overlay.addEventListener("touchstart", handleTouchStart, { once: true });
+        overlay.addEventListener("touchend", handleTouchEnd, { once: true });
+      }
+
+      if (portraitElement) {
+        portraitElement.addEventListener("touchstart", handleTouchStart, { once: true });
+        portraitElement.addEventListener("touchend", handleTouchEnd, { once: true });
+      }
     }
+
+
+    /**
+     * Renders the initial overlay with person description and placeholder extract.
+     */
+    function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
+      wikiInfo.innerHTML = `
+        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
+          <p class="description">${correctPerson.description}</p>
+          <h2>${name}</h2>
+          <p id="wiki-extract">Loading Wikipedia summary...</p>
+          <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+        </div>
+      `;
+      wikiInfo.style.display = "block";
+
+      addSwipeListeners();
+      attachOverlayClickHandler();
+    }
+
 
     /**
     * Loads a new game round by selecting a unique pair of people,
@@ -539,8 +557,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }, OVERLAY_INTERACTION_DELAY);
         }
 
-        addSwipeListeners();
-        fetchWikiExtract(wikiTitle);
+          fetchWikiExtract(wikiTitle);
       } catch (error) {
         console.error("Error fetching Wikipedia summary:", error);
 
