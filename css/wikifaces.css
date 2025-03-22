@@ -6,15 +6,19 @@
     box-sizing: border-box;
     border: 0px solid white;
     font-family: 'Source Sans Pro', sans-serif;
+    color: white;
 }
 
 body {
     background-color: #000;
-    color: white;
     overflow: hidden;
     height: 100vh;
     -webkit-tap-highlight-color: transparent;
     /* border: 3px solid green; */
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* IE10+/Edge */
 }
 
 /* WikiFaces Logo in the top-left */
@@ -38,8 +42,6 @@ body {
     filter: brightness(70%);
     z-index: -1;
     touch-action: manipulation;  /* Allow swipe/tap gestures */
-    -webkit-user-select: none;   /* Prevent text selection on iOS */
-    user-select: none;
 }
 
 #portrait-spinner {
@@ -61,7 +63,6 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
   font-size: 24px;
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
   white-space: normal; /* Allow text to wrap */
@@ -70,8 +71,9 @@ body {
   text-align: center;
   z-index: 1000;
   animation: pulse 2s infinite;
-  pointer-events: none;
   background: none;
+  pointer-events: none;
+  touch-action: none;
 }
 
 @keyframes pulse {
@@ -85,7 +87,6 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
   font-size: 24px;
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
   white-space: normal; /* Allow text to wrap */
@@ -168,7 +169,6 @@ body {
 
 .score-label {
   font-weight: bold;
-  color: white;
   margin-right: 10px;
   font-size: 12px;
   padding: 2px 0px 3px 0px; /* TOP RIGHT BOTTOM LEFT; */
@@ -195,7 +195,6 @@ body {
 
 .name-button {
   background: none;
-  color: white;
   font-size: 40px;
   font-weight: bold;
   text-shadow: 2px 2px 2px black;
@@ -222,16 +221,6 @@ body {
     display: none;
 }
 
-@keyframes focusGrowShrink {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.5); }
-  100% { transform: scale(1); }
-}
-
-.name-button.focus-pulse {
-  animation: focusGrowShrink 2.5s ease-in-out;
-}
-
 /* Overlay for Wikipedia Info */
 .overlay {
     position: fixed;
@@ -245,16 +234,18 @@ body {
     background: rgba(0, 0, 0, 0.5);
     text-align: left;
     z-index: 20;
-    color: white;
     justify-content: space-between;
     border: 0px solid magenta;
     border-top: 1px solid white;
     border-bottom: 1px solid white;
-      /* pointer-events: none; */
-    touch-action: manipulation; /* Enables tap, swipe, and pinch gestures */
-    -webkit-user-select: none;  /* Prevents text selection on iOS Safari */
-    user-select: none;
+    pointer-events: auto;
+    touch-action: auto;
+    cursor: pointer;
 }
+
+  pointer-events: auto;
+  touch-action: auto;
+  cursor: pointer; /* Optional: gives visual cue */
 
 .overlay-disabled {
   pointer-events: none;
@@ -303,7 +294,8 @@ body {
   padding: 10px 10px 10px 0px; /* top, right, bottom, left */
   background-color: rgba(0, 0, 0, 0);
   border-radius: 5px;
-  pointer-events: auto;
+  pointer-events: auto; /* ✅ Must be auto when clickable */
+  touch-action: auto;
   border: 0px solid white;
   width: fit-content;          /* Shrinks to fit content */
   max-width: 90%;              /* Prevents it from getting too wide on long text */
@@ -328,7 +320,6 @@ body {
     transform: translateX(-50%); /* Horizontal centering */
     backdrop-filter: blur(5px);
     background: rgba(0, 0, 0, 0.2);
-    color: white;
     font: bold 20px sans-serif; /* Combines font-size & font-weight */
     padding: 15px;
     border-radius: 10px;
@@ -370,7 +361,6 @@ body {
 }
 
 #end-message .end-text {
-    color: white;
     font-size: 14px;
     margin-bottom: 20px;
     text-align: center;
@@ -391,7 +381,6 @@ body {
     width: 100vw;
     height: 40px;
     background: rgba(0, 0, 0, 1);
-    color: white;
     padding: 20px 10px 15px 20px; /* TOP RIGHT BOTTOM LEFT; */
     display: flex;
     gap: 10px;

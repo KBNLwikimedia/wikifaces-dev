@@ -1,6 +1,15 @@
 document.addEventListener("DOMContentLoaded", function () {
     const MAX_ROUNDS = 5; // Configurable number of rounds
     const MAX_CHARACTERS = 250;
+
+    // === Global Timeout Configurations ===
+    const FADE_DURATION = 0;                  // Duration of fade-in/out animations
+    const OVERLAY_CLICK_LOCK_TIME = 0;     // Delay before overlay becomes clickable
+    const NEXT_ROUND_UNLOCK_TIME = 0;      // Time during which rapid-fire clicks on overlay are disabled
+    const IMAGE_LOAD_TIMEOUT = 5000;          // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
+    const RESULT_INTERACTION_LOCK = 0;        // Delay before next interaction allowed
+    const GAME_END_COUNTDOWN_START = 5;       // Countdown seconds after game ends
+
     let portraits = [];
     let correctPerson = null;
     let incorrectPerson = null;
@@ -9,6 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let usedNameKeys = new Set();
     let usedPairs = new Set();
     let interactionLocked = false;
+    let nextRoundLocked = false;
+
 
     const portraitElement = document.getElementById("portrait");
     const nameOptions = document.getElementById("buttons");
@@ -64,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.warn("Image load timeout");
             showImageLoadingNotice();
             unlockInteraction();
-        }, 4000);
+        }, IMAGE_LOAD_TIMEOUT);
 
         img.onload = () => {
             clearTimeout(timeout);
@@ -204,47 +215,61 @@ document.addEventListener("DOMContentLoaded", function () {
      * Renders the initial overlay with person description and placeholder extract.
      */
     function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
-        wikiInfo.innerHTML = `
-            <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-                <p class="description">${correctPerson.description}</p>
-                <h2>${name}</h2>
-                <p id="wiki-extract">Loading Wikipedia summary...</p>
-                <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
-            </div>
-        `;
-        wikiInfo.style.display = "block";
+      // 1. Inject the HTML
+      wikiInfo.innerHTML = `
+        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
+          <p class="description">${correctPerson.description}</p>
+          <h2>${name}</h2>
+          <p id="wiki-extract">Loading Wikipedia summary...</p>
+          <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+        </div>
+      `;
+      wikiInfo.style.display = "block";
+
+      // 2. Attach the click listener *after* HTML is injected
+      const overlay = document.getElementById("overlay");
+      if (overlay) {
+        // 🔒 Temporarily lock pointer interaction and next round
+        overlay.style.pointerEvents = "none";
+        overlay.style.touchAction = "none";
+        nextRoundLocked = true;
+
+        // 🔁 Re-enable everything after 1000ms
+        setTimeout(() => {
+          overlay.style.pointerEvents = "auto";
+          overlay.style.touchAction = "auto";
+          nextRoundLocked = false;
+        }, NEXT_ROUND_UNLOCK_TIME);
+
+        // 🖱️ Overlay click to trigger next round
+        overlay.addEventListener("click", () => {
+          if (roundPlayed && !nextRoundLocked) {
+            loadNewRound();
+            wikiInfo.innerHTML = "";
+            wikiInfo.style.display = "none";
+          }
+        });
+      }
     }
+
+
 
     /**
      * Displays the loaded portrait image with a fade-in effect.
      * @param {function} callback - Function to call after image is shown.
      */
-        function showPortraitImage(callback) {
+    function showPortraitImage(callback) {
         const spinner = document.getElementById("portrait-spinner");
-        if (spinner) spinner.style.display = "none";
+        if (spinner) spinner.style.display = "none";  // 👈 Only hide now
 
         portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
         portraitElement.classList.add("fade-in");
 
         setTimeout(() => {
             portraitElement.classList.remove("fade-in");
-
-            // ✅ Trigger focus animation on name buttons
-            const buttons = document.querySelectorAll(".name-button");
-            buttons.forEach(button => {
-                button.classList.add("focus-pulse");
-
-                // Remove class after animation so it can be reused next round
-                button.addEventListener("animationend", () => {
-                    button.classList.remove("focus-pulse");
-                }, { once: true });
-            });
-
             if (typeof callback === 'function') callback();
-        }, 500); // match fade-in duration
+        }, FADE_DURATION);
     }
-
-
 
 
     /**
@@ -321,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     nameOptions.style.display = "flex";
                     unlockInteraction();
                 });
-            }, 0);
+            }, 1000);
         });
     }
 
@@ -368,7 +393,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         setTimeout(() => {
             interactionLocked = false;
-        }, 1200); // unlock after overlay is ready
+        }, RESULT_INTERACTION_LOCK); // unlock after overlay is ready
     }
 
     /**
@@ -429,7 +454,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const countdownElement = document.createElement("div");
                 countdownElement.className = "countdown-text";
-                let countdown = 5;
+                let countdown = GAME_END_COUNTDOWN_START;
                 countdownElement.textContent = `New game will start in ${countdown} seconds`;
 
                 const interval = setInterval(() => {
@@ -482,31 +507,40 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param {boolean} wasCorrect - Whether the guess was correct.
     */
     function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
-        try {
-            const wikiTitle = wikipediaURL.split("/").pop();
-            nameOptions.style.display = "none";
+      try {
+        const wikiTitle = wikipediaURL.split("/").pop();
+        nameOptions.style.display = "none";
 
-            renderInitialOverlay(name, wikipediaURL, wasCorrect);
+        renderInitialOverlay(name, wikipediaURL, wasCorrect);
 
-            // Temporarily disable interaction with overlay
-            const overlay = document.querySelector(".overlay");
-            if (overlay) {
-                overlay.style.pointerEvents = "none";
-                overlay.style.touchAction = "none";
-                setTimeout(() => {
-                    overlay.style.pointerEvents = "auto";
-                    overlay.style.touchAction = "auto";
-                }, 2000);
-            }
+        const overlay = document.querySelector(".overlay");
+        if (overlay) {
+          overlay.style.pointerEvents = "none";
+          overlay.style.touchAction = "none";
 
-            addSwipeListeners();
-            fetchWikiExtract(wikiTitle);
-
-        } catch (error) {
-            console.error("Error fetching Wikipedia summary:", error);
-            unlockInteraction();
+          // Always re-enable after 2s
+          setTimeout(() => {
+            overlay.style.pointerEvents = "auto";
+            overlay.style.touchAction = "auto";
+          }, 2000);
         }
+
+        addSwipeListeners();
+        fetchWikiExtract(wikiTitle);
+      } catch (error) {
+        console.error("Error fetching Wikipedia summary:", error);
+
+        // 🛡️ Fallback unlock
+        const overlay = document.querySelector(".overlay");
+        if (overlay) {
+          overlay.style.pointerEvents = "auto";
+          overlay.style.touchAction = "auto";
+        }
+
+        unlockInteraction();
+      }
     }
+
 
     /**
      * Fetches the Wikipedia summary content and updates the overlay.
