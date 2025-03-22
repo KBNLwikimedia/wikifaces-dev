@@ -5,12 +5,12 @@
     padding: 0px;
     box-sizing: border-box;
     border: 0px solid white;
+    font-family: 'Source Sans Pro', sans-serif;
 }
 
 body {
     background-color: #000;
     color: white;
-    font-family: 'Source Sans Pro', sans-serif;
     overflow: hidden;
     height: 100vh;
     -webkit-tap-highlight-color: transparent;
@@ -55,6 +55,42 @@ body {
   display: none;
   pointer-events: none;
 }
+
+.image-loading-notice {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  z-index: 1000;
+  animation: pulse 2s infinite;
+  pointer-events: none;
+  background: none;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.portrait-load-error {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  z-index: 1000;
+  font-size: 16px;
+  pointer-events: none;
+}
+
 
 /* Scoreboard container */
 #score-board {
