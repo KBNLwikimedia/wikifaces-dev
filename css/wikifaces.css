@@ -124,7 +124,7 @@ body {
 
 /* Ensure .description inside .overlay p is italic and smaller */
 .overlay p.description {
-    font-size: 14px; /* Make it smaller */
+    font-size: 16px; /* Make it smaller */
     font-style: italic; /* Make it italic */
     padding: 10px 0px 3px 0px; /* TOP RIGHT BOTTOM LEFT; */
 }
@@ -141,7 +141,7 @@ body {
 }
 
 .overlay p {
-    font-size: 16px;
+    font-size: 18px;
     color: #fff;
     padding: 0px 0px 20px 0px; /* TOP RIGHT BOTTOM LEFT; */
 }
@@ -157,7 +157,6 @@ body {
 .overlay a.wikipedia-link {
     font-size: 20px;
     color: #ffffff;
-    width:100%;
     text-decoration: none;
     font-weight: 600;
     display: inline-block; /* Allows padding to increase click area */
