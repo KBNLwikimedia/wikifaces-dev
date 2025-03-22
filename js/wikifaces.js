@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.warn("Image load timeout");
             showImageLoadingNotice();
             unlockInteraction();
-        }, 6000);
+        }, 4000);
 
         img.onload = () => {
             clearTimeout(timeout);
@@ -85,8 +85,8 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     function showImageLoadingNotice() {
         const loadingNotice = document.createElement("div");
-        loadingNotice.id = "image-loading-notice";
-        loadingNotice.className = "image-loading-notice";
+        loadingNotice.id = "portrait-loading-notice";
+        loadingNotice.className = "portrait-loading-notice";
         loadingNotice.textContent = "⏳ Hold on, image still loading...";
         document.body.appendChild(loadingNotice);
     }
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * Removes the image loading notice.
      */
     function removeImageLoadingNotice() {
-        const notice = document.getElementById("image-loading-notice");
+        const notice = document.getElementById("portrait-loading-notice");
         if (notice && notice.parentElement) {
             notice.parentElement.removeChild(notice);
         }
@@ -219,18 +219,32 @@ document.addEventListener("DOMContentLoaded", function () {
      * Displays the loaded portrait image with a fade-in effect.
      * @param {function} callback - Function to call after image is shown.
      */
-    function showPortraitImage(callback) {
+        function showPortraitImage(callback) {
         const spinner = document.getElementById("portrait-spinner");
-        if (spinner) spinner.style.display = "none";  // 👈 Only hide now
+        if (spinner) spinner.style.display = "none";
 
         portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
         portraitElement.classList.add("fade-in");
 
         setTimeout(() => {
             portraitElement.classList.remove("fade-in");
+
+            // ✅ Trigger focus animation on name buttons
+            const buttons = document.querySelectorAll(".name-button");
+            buttons.forEach(button => {
+                button.classList.add("focus-pulse");
+
+                // Remove class after animation so it can be reused next round
+                button.addEventListener("animationend", () => {
+                    button.classList.remove("focus-pulse");
+                }, { once: true });
+            });
+
             if (typeof callback === 'function') callback();
-        }, 800);
+        }, 500); // match fade-in duration
     }
+
+
 
 
     /**
@@ -250,7 +264,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 interactionLocked = true;
                 loadNewRound();
                 resetOverlayState();
-                setTimeout(() => interactionLocked = false, 2000);
+                setTimeout(() => interactionLocked = false, 1000);
             }
         }
 
@@ -307,7 +321,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     nameOptions.style.display = "flex";
                     unlockInteraction();
                 });
-            }, 1000);
+            }, 0);
         });
     }
 
