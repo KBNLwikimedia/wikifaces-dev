@@ -101,13 +101,13 @@ body {
 /* Fades the element out by reducing opacity */
 .fade-out {
   opacity: 0;
-  transition: opacity 0s ease-out;
+  transition: opacity 0.25s ease-out;
 }
 
 /* Fades the element in by increasing opacity */
 .fade-in {
   opacity: 1;
-  transition: opacity 0s ease-in;
+  transition: opacity 0.25s ease-in;
 }
 
 /* ======================Scoreboard container */

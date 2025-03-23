@@ -5,8 +5,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
 
     // === Global Timeout Configurations - in milliseconds ===
-    const NEW_ROUND_FADE_DELAY = 0; // Delay before revealing portrait and buttons
-    const FADE_DURATION = 500; // Interval between showing the portrait ans showing the name buttons
+    const NEW_ROUND_FADE_DELAY = 250; // Delay before revealing portrait and buttons on the new round
+    const PORTRAIT_BUTTON_DELAY = 300; // Interval between showing the portrait and showing the name buttons
     const IMAGE_LOAD_TIMEOUT = 5000; // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
     const IMAGE_ERROR_DISPLAY_DURATION = 1000; // How long the image loading error message is shown (ms)
 
@@ -240,7 +240,7 @@ document.addEventListener("DOMContentLoaded", function() {
         setTimeout(() => {
             portraitElement.classList.remove("fade-in");
             if (typeof callback === 'function') callback();
-        }, FADE_DURATION);
+        }, PORTRAIT_BUTTON_DELAY);
     }
 
     /**
