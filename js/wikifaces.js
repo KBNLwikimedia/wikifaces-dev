@@ -1,37 +1,43 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function() {
     const MAX_ROUNDS = 5; // Configurable number of rounds = number of circles in the scoreboard
-    const MAX_CHARACTERS = 250;
+    const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
 
     // === Global Timeout Configurations - in milliseconds ===
     const NEW_ROUND_FADE_DELAY = 0; // Delay before revealing portrait and buttons
-    const FADE_DURATION = 500;            // Interval between showing the portrait ans showing the name buttons
-
-    const IMAGE_LOAD_TIMEOUT = 5000;       // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
+    const FADE_DURATION = 500; // Interval between showing the portrait ans showing the name buttons
+    const IMAGE_LOAD_TIMEOUT = 5000; // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
     const IMAGE_ERROR_DISPLAY_DURATION = 1000; // How long the image loading error message is shown (ms)
 
-    const SWIPE_THRESHOLD = 100;           // Minimum swipe distance to trigger next round
+    const SWIPE_THRESHOLD = 100; // Minimum swipe distance to trigger next round
 
     // Not sure if I understand the following constants exactly and correctly
-    const OVERLAY_INTERACTION_DELAY = 500; // This defines how long the overlay stays non-clickable after it appears — to avoid accidental double-taps or clicks too early.
-    const SWIPE_INTERACTION_UNLOCK_DELAY = 500; // After the user performs a swipe (to move to the next round), this defines how long to wait before allowing another interaction — such as a new swipe or click
-    const NEXT_ROUND_UNLOCK_TIME = 500;      //Controls the delay between when the overlay is shown and when the user is allowed to click it to start the next round.
-    const RESULT_INTERACTION_LOCK = 500;     // When the result banner is shown (✅ or ❌), this defines how long interaction is locked afterward to prevent double-pressing or skipping too quickly.
+    const UI_INTERACTION_UNLOCK_DELAY = 800;
+    // This defines how long the overlay stays non-clickable after it appears — to avoid accidental double-taps or clicks too early.
+    const OVERLAY_INTERACTION_DELAY = UI_INTERACTION_UNLOCK_DELAY;
+    // After the user performs a swipe (to move to the next round), this defines how long to wait before allowing another interaction — such as a new swipe or click
+    const SWIPE_INTERACTION_UNLOCK_DELAY = UI_INTERACTION_UNLOCK_DELAY;
+    //Controls the delay between when the overlay is shown and when the user is allowed to click it to start the next round.
+    const NEXT_ROUND_UNLOCK_TIME = UI_INTERACTION_UNLOCK_DELAY;
+    // When the result banner is shown (✅ or ❌), this defines how long interaction is locked afterward to prevent double-pressing or skipping too quickly.
+    const RESULT_INTERACTION_LOCK = UI_INTERACTION_UNLOCK_DELAY;
 
     // Need to better understand the following constants
-    const GAME_END_DISPLAY_DELAY = 1600;   // Delay before showing win/loss GIF (ms)
-    const GAME_END_COUNTDOWN_START = 5;       // Countdown seconds after game ends and new game begin
-    const GAME_END_INTERVAL_DELAY = 1000;  // Countdown tick interval (ms)
+    const GAME_END_DISPLAY_DELAY = 1600; // Delay before showing win/loss GIF (ms)
+    const GAME_END_COUNTDOWN_START = 5; // Countdown seconds after game ends and new game begin
+    const GAME_END_INTERVAL_DELAY = 1000; // Countdown tick interval (ms)
 
     let portraits = [];
     let correctPerson = null;
     let incorrectPerson = null;
-    let score = { correct: 0, wrong: 0 };
+    let score = {
+        correct: 0,
+        wrong: 0
+    };
     let roundPlayed = false;
     let usedNameKeys = new Set();
     let usedPairs = new Set();
     let interactionLocked = false;
     let nextRoundLocked = false;
-
 
     const portraitElement = document.getElementById("portrait");
     const nameOptions = document.getElementById("buttons");
@@ -40,7 +46,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const gameContainer = document.getElementById("game-container");
     const scoreBoard = document.getElementById("score-board");
     const messageButtonContainer = document.getElementById("message-button-container");
-
 
     /**
      * Capitalizes the first letter of a given text string.
@@ -128,18 +133,17 @@ document.addEventListener("DOMContentLoaded", function () {
      * Displays a visible error message on the screen if image fails to load.
      */
     function showImageLoadError(duration = IMAGE_ERROR_DISPLAY_DURATION) {
-      const errorMessage = document.createElement("div");
-      errorMessage.textContent = "⚠️ Failed to load image. Please try again.";
-      errorMessage.className = "portrait-load-error"; // 🔧 fixed: no leading dot here!
-      document.body.appendChild(errorMessage);
+        const errorMessage = document.createElement("div");
+        errorMessage.textContent = "⚠️ Failed to load image. Please try again.";
+        errorMessage.className = "portrait-load-error"; // 🔧 fixed: no leading dot here!
+        document.body.appendChild(errorMessage);
 
-      setTimeout(() => {
-        if (errorMessage.parentElement) {
-          errorMessage.parentElement.removeChild(errorMessage);
-        }
-      }, duration);
+        setTimeout(() => {
+            if (errorMessage.parentElement) {
+                errorMessage.parentElement.removeChild(errorMessage);
+            }
+        }, duration);
     }
-
 
     /**
      * Parses CSV text into an array of person objects.
@@ -195,7 +199,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return [group[firstIndex], group[secondIndex]];
     }
 
-
     /**
      * Dynamically creates name selection buttons.
      * @param {Array} allNames - Names to display.
@@ -230,7 +233,7 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     function showPortraitImage(callback) {
         const spinner = document.getElementById("portrait-spinner");
-        if (spinner) spinner.style.display = "none";  // 👈 Only hide now
+        if (spinner) spinner.style.display = "none"; // 👈 Only hide now
 
         portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
         portraitElement.classList.add("fade-in");
@@ -246,81 +249,87 @@ document.addEventListener("DOMContentLoaded", function () {
      * Called immediately after injecting overlay into the DOM.
      */
     function attachOverlayClickHandler() {
-      const overlay = document.getElementById("overlay");
-      if (!overlay) return;
+        const overlay = document.getElementById("overlay");
+        if (!overlay) return;
 
-      overlay.style.pointerEvents = "none";
-      overlay.style.touchAction = "none";
-      nextRoundLocked = true;
+        overlay.style.pointerEvents = "none";
+        overlay.style.touchAction = "none";
+        nextRoundLocked = true;
 
-      setTimeout(() => {
-        overlay.style.pointerEvents = "auto";
-        overlay.style.touchAction = "auto";
-        nextRoundLocked = false;
-      }, NEXT_ROUND_UNLOCK_TIME);
+        setTimeout(() => {
+            overlay.style.pointerEvents = "auto";
+            overlay.style.touchAction = "auto";
+            nextRoundLocked = false;
+        }, NEXT_ROUND_UNLOCK_TIME);
 
-      overlay.addEventListener("click", () => {
-        if (roundPlayed && !nextRoundLocked) {
-          loadNewRound();
-          wikiInfo.innerHTML = "";
-          wikiInfo.style.display = "none";
-        }
-      });
+        overlay.addEventListener("click", () => {
+            if (roundPlayed && !nextRoundLocked) {
+                loadNewRound();
+                wikiInfo.innerHTML = "";
+                wikiInfo.style.display = "none";
+            }
+        });
     }
-
 
     /**
      * Adds swipe listeners to allow navigating to the next round.
      */
-     function addSwipeListeners() {
-      let touchStartY = 0;
-      let touchEndY = 0;
+    function addSwipeListeners() {
+        let touchStartY = 0;
+        let touchEndY = 0;
 
-      const overlay = document.getElementById("overlay");
+        const overlay = document.getElementById("overlay");
 
-      function handleTouchStart(event) {
-        touchStartY = event.changedTouches[0].screenY;
-      }
-
-      function handleTouchEnd(event) {
-        touchEndY = event.changedTouches[0].screenY;
-
-        if (
-          touchStartY - touchEndY > SWIPE_THRESHOLD &&
-          roundPlayed &&
-          !interactionLocked &&
-          !nextRoundLocked
-        ) {
-          nextRoundLocked = true;
-
-          loadNewRound();
-          wikiInfo.innerHTML = "";
-          wikiInfo.style.display = "none";
-
-          // Unlock next round after transition
-          setTimeout(() => {
-            nextRoundLocked = false;
-          }, NEXT_ROUND_UNLOCK_TIME);
+        function handleTouchStart(event) {
+            touchStartY = event.changedTouches[0].screenY;
         }
-      }
 
-      if (overlay) {
-        overlay.addEventListener("touchstart", handleTouchStart, { once: true });
-        overlay.addEventListener("touchend", handleTouchEnd, { once: true });
-      }
+        function handleTouchEnd(event) {
+            touchEndY = event.changedTouches[0].screenY;
 
-      if (portraitElement) {
-        portraitElement.addEventListener("touchstart", handleTouchStart, { once: true });
-        portraitElement.addEventListener("touchend", handleTouchEnd, { once: true });
-      }
+            if (
+                touchStartY - touchEndY > SWIPE_THRESHOLD &&
+                roundPlayed &&
+                !interactionLocked &&
+                !nextRoundLocked
+            ) {
+                nextRoundLocked = true;
+
+                loadNewRound();
+                wikiInfo.innerHTML = "";
+                wikiInfo.style.display = "none";
+
+                // Unlock next round after transition
+                setTimeout(() => {
+                    nextRoundLocked = false;
+                }, NEXT_ROUND_UNLOCK_TIME);
+            }
+        }
+
+        if (overlay) {
+            overlay.addEventListener("touchstart", handleTouchStart, {
+                once: true
+            });
+            overlay.addEventListener("touchend", handleTouchEnd, {
+                once: true
+            });
+        }
+
+        if (portraitElement) {
+            portraitElement.addEventListener("touchstart", handleTouchStart, {
+                once: true
+            });
+            portraitElement.addEventListener("touchend", handleTouchEnd, {
+                once: true
+            });
+        }
     }
-
 
     /**
      * Renders the initial overlay with person description and placeholder extract.
      */
     function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
-      wikiInfo.innerHTML = `
+        wikiInfo.innerHTML = `
         <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
           <p class="description">${correctPerson.description}</p>
           <h2>${name}</h2>
@@ -328,17 +337,16 @@ document.addEventListener("DOMContentLoaded", function () {
           <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
         </div>
       `;
-      wikiInfo.style.display = "block";
+        wikiInfo.style.display = "block";
 
-      addSwipeListeners();
-      attachOverlayClickHandler();
+        addSwipeListeners();
+        attachOverlayClickHandler();
     }
 
-
     /**
-    * Loads a new game round by selecting a unique pair of people,
-    * updating the UI and safely handling image transitions.
-    */
+     * Loads a new game round by selecting a unique pair of people,
+     * updating the UI and safely handling image transitions.
+     */
     function loadNewRound() {
         if (interactionLocked || portraits.length < 2) return;
         interactionLocked = true;
@@ -411,7 +419,8 @@ document.addEventListener("DOMContentLoaded", function () {
             score.correct++;
             resultMessage.innerHTML = `${happyFace} <span>Spot on! This was ${correctPerson.name}.</span>`;
             wasCorrect = true;
-        } else {
+        }
+        else {
             event.target.style.color = "red";
             score.wrong++;
             resultMessage.innerHTML = `${sadFace} <span>Oh, no! This was not ${incorrectPerson.name}, it was ${correctPerson.name}.</span>`;
@@ -473,7 +482,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (score.correct >= MAX_ROUNDS) {
             gifURL = "https://i.pinimg.com/originals/ee/42/d9/ee42d91ece376e6847f6941b72269c76.gif";
             messageText = "🎉 You won the game! 🎉";
-        } else if (score.wrong >= MAX_ROUNDS) {
+        }
+        else if (score.wrong >= MAX_ROUNDS) {
             gifURL = "https://i.pinimg.com/originals/0e/46/23/0e4623557c805b3462daed47c2c0d4b6.gif";
             messageText = "😢 You lost the game! Try again.";
         }
@@ -498,7 +508,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         loadNewRound();
                         wikiInfo.innerHTML = "";
                         wikiInfo.style.display = "none";
-                    } else {
+                    }
+                    else {
                         countdownElement.textContent = `New game will start in ${countdown} seconds`;
                     }
                 }, GAME_END_INTERVAL_DELAY); // 🔄 use global constant here
@@ -536,41 +547,41 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param {string} name - The person's name.
      * @param {string} wikipediaURL - URL to the Wikipedia page.
      * @param {boolean} wasCorrect - Whether the guess was correct.
-    */
+     */
     function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
-      try {
-        const wikiTitle = wikipediaURL.split("/").pop();
-        nameOptions.style.display = "none";
+        try {
+            const wikiTitle = wikipediaURL.split("/").pop();
+            nameOptions.style.display = "none";
 
-        renderInitialOverlay(name, wikipediaURL, wasCorrect);
+            renderInitialOverlay(name, wikipediaURL, wasCorrect);
 
-        const overlay = document.querySelector(".overlay");
-        if (overlay) {
-          overlay.style.pointerEvents = "none";
-          overlay.style.touchAction = "none";
+            const overlay = document.querySelector(".overlay");
+            if (overlay) {
+                overlay.style.pointerEvents = "none";
+                overlay.style.touchAction = "none";
 
-          // Always re-enable after 2s
-          setTimeout(() => {
-            overlay.style.pointerEvents = "auto";
-            overlay.style.touchAction = "auto";
-          }, OVERLAY_INTERACTION_DELAY);
+                // Always re-enable after 2s
+                setTimeout(() => {
+                    overlay.style.pointerEvents = "auto";
+                    overlay.style.touchAction = "auto";
+                }, OVERLAY_INTERACTION_DELAY);
+            }
+
+            fetchWikiExtract(wikiTitle);
         }
+        catch (error) {
+            console.error("Error fetching Wikipedia summary:", error);
 
-          fetchWikiExtract(wikiTitle);
-      } catch (error) {
-        console.error("Error fetching Wikipedia summary:", error);
+            // 🛡️ Fallback unlock
+            const overlay = document.querySelector(".overlay");
+            if (overlay) {
+                overlay.style.pointerEvents = "auto";
+                overlay.style.touchAction = "auto";
+            }
 
-        // 🛡️ Fallback unlock
-        const overlay = document.querySelector(".overlay");
-        if (overlay) {
-          overlay.style.pointerEvents = "auto";
-          overlay.style.touchAction = "auto";
+            unlockInteraction();
         }
-
-        unlockInteraction();
-      }
     }
-
 
     /**
      * Fetches the Wikipedia summary content and updates the overlay.
@@ -615,13 +626,13 @@ document.addEventListener("DOMContentLoaded", function () {
             portraits = parseCSV(text);
             updateScoreBoard();
             loadNewRound();
-        } catch (error) {
+        }
+        catch (error) {
             console.error("Error fetching portraits:", error);
         }
     }
 
-
-// Main function stuff
+    // Main function stuff
     gameContainer.addEventListener("touchend", (event) => {
         if (!event.target.closest("a") && roundPlayed) {
             loadNewRound();
