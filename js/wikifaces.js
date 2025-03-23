@@ -1,3 +1,5 @@
+// For usage in https://jshint.com/
+/* jshint esversion: 8 */
 document.addEventListener("DOMContentLoaded", function() {
     const MAX_ROUNDS = 5; // Configurable number of rounds = number of circles in the scoreboard
     const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
@@ -14,8 +16,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const UI_INTERACTION_UNLOCK_DELAY = 800;
     // This defines how long the overlay stays non-clickable after it appears — to avoid accidental double-taps or clicks too early.
     const OVERLAY_INTERACTION_DELAY = UI_INTERACTION_UNLOCK_DELAY;
-    // After the user performs a swipe (to move to the next round), this defines how long to wait before allowing another interaction — such as a new swipe or click
-    const SWIPE_INTERACTION_UNLOCK_DELAY = UI_INTERACTION_UNLOCK_DELAY;
     //Controls the delay between when the overlay is shown and when the user is allowed to click it to start the next round.
     const NEXT_ROUND_UNLOCK_TIME = UI_INTERACTION_UNLOCK_DELAY;
     // When the result banner is shown (✅ or ❌), this defines how long interaction is locked afterward to prevent double-pressing or skipping too quickly.
@@ -45,7 +45,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const wikiInfo = document.getElementById("wiki-info");
     const gameContainer = document.getElementById("game-container");
     const scoreBoard = document.getElementById("score-board");
-    const messageButtonContainer = document.getElementById("message-button-container");
 
     /**
      * Capitalizes the first letter of a given text string.
