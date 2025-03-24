@@ -1,6 +1,7 @@
 // For usage in https://jshint.com/
 /* jshint esversion: 8 */
 document.addEventListener("DOMContentLoaded", function() {
+    DATA_FILE = "data/wikifaces-datacache2.csv"
     const MAX_ROUNDS = 5; // Configurable number of rounds = number of circles in the scoreboard
     const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
 
@@ -243,104 +244,58 @@ document.addEventListener("DOMContentLoaded", function() {
         }, PORTRAIT_BUTTON_DELAY);
     }
 
-    /**
-     * Attaches click behavior to the overlay for moving to the next round.
-     * Called immediately after injecting overlay into the DOM.
-     */
-    function attachOverlayClickHandler() {
-        const overlay = document.getElementById("overlay");
-        if (!overlay) return;
+function addOverlayNextRoundListeners() {
+  const overlay = document.getElementById("overlay");
+  if (!overlay) return;
 
-        overlay.style.pointerEvents = "none";
-        overlay.style.touchAction = "none";
-        nextRoundLocked = true;
+  let touchStartY = 0;
+  let touchEndY = 0;
 
-        setTimeout(() => {
-            overlay.style.pointerEvents = "auto";
-            overlay.style.touchAction = "auto";
-            nextRoundLocked = false;
-        }, NEXT_ROUND_UNLOCK_TIME);
+  overlay.addEventListener("click", () => {
+    maybeAdvanceToNextRound();
+  }, { once: true });
 
-        overlay.addEventListener("click", () => {
-            if (roundPlayed && !nextRoundLocked) {
-                loadNewRound();
-                wikiInfo.innerHTML = "";
-                wikiInfo.style.display = "none";
-            }
-        });
+  overlay.addEventListener("touchstart", event => {
+    touchStartY = event.changedTouches[0].screenY;
+  }, { once: true });
+
+  overlay.addEventListener("touchend", event => {
+    touchEndY = event.changedTouches[0].screenY;
+    if (touchStartY - touchEndY > SWIPE_THRESHOLD) {
+      maybeAdvanceToNextRound();
     }
+  }, { once: true });
+}
 
-    /**
-     * Adds swipe listeners to allow navigating to the next round.
-     */
-    function addSwipeListeners() {
-        let touchStartY = 0;
-        let touchEndY = 0;
-
-        const overlay = document.getElementById("overlay");
-
-        function handleTouchStart(event) {
-            touchStartY = event.changedTouches[0].screenY;
-        }
-
-        function handleTouchEnd(event) {
-            touchEndY = event.changedTouches[0].screenY;
-
-            if (
-                touchStartY - touchEndY > SWIPE_THRESHOLD &&
-                roundPlayed &&
-                !interactionLocked &&
-                !nextRoundLocked
-            ) {
-                nextRoundLocked = true;
-
-                loadNewRound();
-                wikiInfo.innerHTML = "";
-                wikiInfo.style.display = "none";
-
-                // Unlock next round after transition
-                setTimeout(() => {
-                    nextRoundLocked = false;
-                }, NEXT_ROUND_UNLOCK_TIME);
-            }
-        }
-
-        if (overlay) {
-            overlay.addEventListener("touchstart", handleTouchStart, {
-                once: true
-            });
-            overlay.addEventListener("touchend", handleTouchEnd, {
-                once: true
-            });
-        }
-
-        if (portraitElement) {
-            portraitElement.addEventListener("touchstart", handleTouchStart, {
-                once: true
-            });
-            portraitElement.addEventListener("touchend", handleTouchEnd, {
-                once: true
-            });
-        }
-    }
 
     /**
      * Renders the initial overlay with person description and placeholder extract.
      */
-    function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
-        wikiInfo.innerHTML = `
-        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-          <p class="description">${correctPerson.description}</p>
-          <h2>${name}</h2>
-          <p id="wiki-extract">Loading Wikipedia summary...</p>
-          <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
-        </div>
-      `;
-        wikiInfo.style.display = "block";
+function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
+  wikiInfo.innerHTML = `
+    <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
+      <p class="description">${correctPerson.description}</p>
+      <h2>${name}</h2>
+      <p id="wiki-extract">Loading Wikipedia summary...</p>
+      <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+    </div>
+  `;
 
-        addSwipeListeners();
-        attachOverlayClickHandler();
+  wikiInfo.style.display = "block";
+
+  // Fade in after short delay
+  setTimeout(() => {
+    const overlay = document.getElementById("overlay");
+    if (overlay) {
+      overlay.classList.add("visible");
     }
+  }, 500); // Delay matches CSS transition timing
+
+ addOverlayNextRoundListeners()
+}
+
+
+
 
     /**
      * Loads a new game round by selecting a unique pair of people,
@@ -353,6 +308,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
         let selectedNameKey, nameGroup;
+
+
+      //HIET GAAT IEYS MIS BIJ HET SELECTEREN VA NDE 2 PERSONEN!!
 
         do {
             selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
@@ -620,7 +578,7 @@ document.addEventListener("DOMContentLoaded", function() {
      */
     async function fetchPortraits() {
         try {
-            const response = await fetch("data/wikifaces-datacache2.csv");
+            const response = await fetch(DATA_FILE);
             const text = await response.text();
             portraits = parseCSV(text);
             updateScoreBoard();
@@ -631,7 +589,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Main function stuff
+// ================= Main function stuff
     gameContainer.addEventListener("touchend", (event) => {
         if (!event.target.closest("a") && roundPlayed) {
             loadNewRound();

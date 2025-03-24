@@ -41,7 +41,8 @@ body {
     background-position: center;
     filter: brightness(70%);
     z-index: -1;
-    touch-action: manipulation;  /* Allow swipe/tap gestures */
+    pointer-events: none;
+    touch-action: none;
 }
 
 #portrait-spinner {
@@ -238,9 +239,22 @@ body {
     border: 0px solid magenta;
     border-top: 1px solid white;
     border-bottom: 1px solid white;
-    pointer-events: auto;
-    touch-action: auto;
-    cursor: pointer;
+
+  opacity: 1;
+  visibility: hidden;
+  transition: opacity 1.6s ease, visibility 1.6s ease;
+  pointer-events: none;
+  touch-action: none; /* optional */
+  cursor: default;     /* or pointer if clickable */
+}
+
+/* When shown */
+.overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  touch-action: auto;
+  cursor: pointer;
 }
 
 /* Ensure .description inside .overlay p is italic and smaller */
@@ -302,6 +316,7 @@ body {
     background: rgba(200, 0, 0, 0.4);
 }
 
+/* ====================== Per game round result Message on top of the screen */
 
 #result-message {
     position: fixed;
