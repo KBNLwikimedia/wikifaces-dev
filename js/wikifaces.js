@@ -381,17 +381,13 @@ function fetchWikiExtract(wikiTitle) {
 async function showPersonOverlay(name, wikipediaURL, wasCorrect) {
     hideNameButtons();
     createOverlayHTML(name, wikipediaURL, wasCorrect);
+    await fetchWikiExtract(wikipediaURL.split("/").pop());
     addOverlayListeners();
-    const wikiTitle = wikipediaURL.split("/").pop();
-    await fetchWikiExtract(wikiTitle);
-
     // ✅ Only now allow user to proceed
     setTimeout(() => {
         interactionLocked = false;
     }, NEXT_ROUND_LOCK); // Lock interaction after showing result message and overlay (ms) - user can't click too quickly and progress to next round
 }
-
-
 
 /**
  * Constructs the HTML for the overlay with placeholder Wikipedia extract.
