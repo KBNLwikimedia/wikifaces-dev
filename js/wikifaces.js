@@ -409,36 +409,37 @@ function createOverlayHTML(name, wikipediaURL, wasCorrect) {
 }
 
     /**
-     * Adds click and swipe listeners to the overlay to advance to the next round.
-     */
-    function addOverlayListeners() {
-        const overlay = document.getElementById("overlay");
-        if (!overlay) return;
+ * Adds click and swipe listeners to the overlay to advance to the next round.
+ */
+function addOverlayListeners() {
+  const overlay = document.getElementById("overlay");
+  if (!overlay) return;
 
-        let touchStartY = 0;
-        let touchEndY = 0;
+  let touchStartY = 0;
+  let touchEndY = 0;
 
-        overlay.addEventListener("click", (event) => {
-            // ✅ Prevent clicks on the Wikipedia link from triggering next round
-            if (event.target.closest(".wikipedia-link")) return;
-               loadNewRound();
-        }, { once: true });
+  overlay.addEventListener("click", (event) => {
+    // ✅ Prevent clicks on the Wikipedia link from triggering next round
+    if (event.target.closest(".wikipedia-link")) return;
+    loadNewRound();
+  });
 
-        overlay.addEventListener("touchstart", event => {
-            touchStartY = event.changedTouches[0].screenY;
-        }, { once: true });
+  overlay.addEventListener("touchstart", (event) => {
+    touchStartY = event.changedTouches[0].screenY;
+  });
 
-        overlay.addEventListener("touchend", event => {
-            touchEndY = event.changedTouches[0].screenY;
+  overlay.addEventListener("touchend", (event) => {
+    touchEndY = event.changedTouches[0].screenY;
 
-            // ✅ Ignore swipe if it started/ended on the link
-            if (event.target.closest(".wikipedia-link")) return;
+    // ✅ Prevent swipes on the Wikipedia link
+    if (event.target.closest(".wikipedia-link")) return;
 
-            if (touchStartY - touchEndY > SWIPE_THRESHOLD) {
-                loadNewRound();
-            }
-        }, { once: true });
+    if (touchStartY - touchEndY > SWIPE_THRESHOLD) {
+      loadNewRound();
     }
+  });
+}
+
 
 
 
