@@ -59,7 +59,7 @@ body {
   pointer-events: none;
 }
 
-.portrait-loading-notice {
+.portrait-loading-notice, .name-selection-notice {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -111,7 +111,7 @@ body {
   transition: opacity 0.25s ease-in;
 }
 
-/* ======================Scoreboard container */
+/* Scoreboard container */
 #score-board {
     position: fixed;
     top: 20px;
@@ -175,9 +175,7 @@ body {
   padding: 2px 0px 3px 0px; /* TOP RIGHT BOTTOM LEFT; */
 }
 
-
-
-/* ====================== Name Buttons */
+ /*Name Buttons */
 #buttons {
   position: fixed;
   top: 0;
@@ -206,7 +204,7 @@ body {
 }
 
 .or-divider {
-  color: D1D1D1;
+  color: #D1D1D1;
   font-size: 30px;
   margin: 15px 0;
   text-align: center;
@@ -239,22 +237,10 @@ body {
     border: 0px solid magenta;
     border-top: 1px solid white;
     border-bottom: 1px solid white;
-
-  opacity: 1;
-  visibility: hidden;
-  transition: opacity 1.6s ease, visibility 1.6s ease;
-  pointer-events: none;
-  touch-action: none; /* optional */
-  cursor: default;     /* or pointer if clickable */
-}
-
-/* When shown */
-.overlay.visible {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  touch-action: auto;
-  cursor: pointer;
+    touch-action: auto;
+    cursor: default;     /* or pointer if clickable */
+    transition: opacity 1.5s ease, visibility 1.5s ease;
+    pointer-events: auto;
 }
 
 /* Ensure .description inside .overlay p is italic and smaller */
@@ -262,7 +248,7 @@ body {
     font-size: 16px; /* Make it smaller */
     font-style: italic; /* Make it italic */
     padding: 10px 0px 3px 0px; /* TOP RIGHT BOTTOM LEFT; */
-    width=70%;
+    width:70%;
 }
 
 .overlay h2 {
@@ -316,7 +302,7 @@ body {
     background: rgba(200, 0, 0, 0.4);
 }
 
-/* ====================== Per game round result Message on top of the screen */
+/* Per game round result Message on top of the screen */
 
 #result-message {
     position: fixed;

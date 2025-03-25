@@ -6,34 +6,26 @@ document.addEventListener("DOMContentLoaded", function() {
     const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
 
     // === Global Timeout Configurations - in milliseconds ===
-    const PORTRAIT_SHOW_DELAY = 250; // Delay before revealing portrait on the new round
-    const PORTRAIT_BUTTON_DELAY = 300; // Interval between showing the portrait and showing the name buttons
-    const IMAGE_LOAD_TIMEOUT = 5000; // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
-    const IMAGE_ERROR_DISPLAY_DURATION = 1000; // How long the image loading error message is shown (ms)
+    const BUTTON_SHOW_DELAY = 300; // Interval between showing the portrait and showing the name buttons
+    const IMAGE_LOADING_MESSAGE_DELAY = 5000; // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
+    const IMAGE_ERROR_DISPLAY_DURATION = 10000; // How long the image loading error message is shown (ms)
 
     const SWIPE_THRESHOLD = 100; // Minimum swipe distance to trigger next round
 
-    // Not sure if I understand the following constants exactly and correctly
-    const UI_INTERACTION_UNLOCK_DELAY = 800;
-    // This defines how long the overlay stays non-clickable after it appears — to avoid accidental double-taps or clicks too early.
-    const OVERLAY_INTERACTION_DELAY = UI_INTERACTION_UNLOCK_DELAY;
-    //Controls the delay between when the overlay is shown and when the user is allowed to click it to start the next round.
-    const NEXT_ROUND_UNLOCK_TIME = UI_INTERACTION_UNLOCK_DELAY;
     // When the result banner is shown (✅ or ❌), this defines how long interaction is locked afterward to prevent double-pressing or skipping too quickly.
-    const RESULT_INTERACTION_LOCK = UI_INTERACTION_UNLOCK_DELAY;
+    NEXT_ROUND_LOCK = 1000; // Lock interaction after showing result message and overlay (ms) - user can't click too quickly and progress to next round
 
     // Need to better understand the following constants
     const GAME_END_DISPLAY_DELAY = 1600; // Delay before showing win/loss GIF (ms)
     const GAME_END_COUNTDOWN_START = 5; // Countdown seconds after game ends and new game begin
     const GAME_END_INTERVAL_DELAY = 1000; // Countdown tick interval (ms)
 
+    const NAME_SELECTION_TIMEOUT = 1000; // 2 seconds, if it takes longer to select names, show a message
+
     let portraits = [];
     let correctPerson = null;
     let incorrectPerson = null;
-    let score = {
-        correct: 0,
-        wrong: 0
-    };
+    let score = {correct: 0, wrong: 0};
     let roundPlayed = false;
     let usedNameKeys = new Set();
     let usedPairs = new Set();
@@ -57,56 +49,105 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     /**
+     * Parses CSV text into an array of person objects.
+     * Assumes the CSV format is: namekey;image;depicts;name;description;wikipedia
+     * @param {string} text - CSV text content.
+     * @returns {Array<Object>} Parsed entries with structured fields.
+     */
+    function parseCSV(text) {
+        const lines = text.split("\n").slice(1);
+        return lines.map(line => {
+            const parts = line.split(";");
+            if (parts.length >= 6) {
+                return {
+                    namekey: parts[0].trim(),
+                    image: parts[1].trim(),
+                    depicts: parts[2].trim(),
+                    name: parts[3].trim(),
+                    description: capitalizeFirstLetter(parts[4].trim()),
+                    wikipedia: parts[5].trim()
+                };
+            }
+        }).filter(entry => entry);
+    }
+
+
+    /**
+     * Clears the result message area before a new round.
+     */
+    function resetResultMessage() {
+        resultMessage.textContent = "";
+        resultMessage.style.display = "none";
+    }
+
+
+//******** Image loading stuff starts here
+
+    /**
      * Unlocks interaction and hides the spinner.
      */
     function unlockInteraction() {
         interactionLocked = false;
     }
 
-    /**
-     * Resets the overlay and result message area before a new round starts.
-     */
-    function resetOverlayState() {
-        resultMessage.textContent = "";
-        resultMessage.style.display = "none";
-        wikiInfo.innerHTML = "";
-        wikiInfo.style.display = "none";
+  /**
+ * Loads a portrait image with fallback and timeout logic, then shows it.
+ * @param {string} src - Image source URL.
+ * @param {function} onComplete - Callback to run after image is shown.
+ */
+function handlePortraitLoadAndDisplay(src, onComplete) {
+    const spinner = document.getElementById("portrait-spinner");
+    if (spinner) spinner.style.display = "block";
 
-        const oldOverlay = document.querySelector(".overlay");
-        if (oldOverlay) {
-            oldOverlay.style.pointerEvents = "auto";
-            oldOverlay.style.touchAction = "auto";
-        }
-    }
+    loadPortraitImage(src, () => {
+        if (spinner) spinner.style.display = "none";
+        displayLoadedPortrait(onComplete);
+    });
+}
 
-    /**
-     * Loads a portrait image and ensures a timeout fallback to prevent freezing.
-     * @param {string} src - Image source URL.
-     * @param {function} onLoad - Callback once loaded.
-     */
-    function preloadPortraitImage(src, onLoad) {
-        const img = new Image();
-        img.src = src;
+/**
+ * Loads image and handles timeout and errors.
+ * @param {string} src - Image source URL.
+ * @param {function} onLoad - Callback when loaded.
+ */
+function loadPortraitImage(src, onLoad) {
+    const img = new Image();
+    img.src = src;
 
-        const timeout = setTimeout(() => {
-            console.warn("Image load timeout");
-            showImageLoadingNotice();
-            unlockInteraction();
-        }, IMAGE_LOAD_TIMEOUT);
+    const timeout = setTimeout(() => {
+        console.warn("Image load timeout");
+        showImageLoadingNotice();
+        unlockInteraction();
+    }, IMAGE_LOADING_MESSAGE_DELAY);
 
-        img.onload = () => {
-            clearTimeout(timeout);
-            removeImageLoadingNotice();
-            onLoad();
-        };
+    img.onload = () => {
+        clearTimeout(timeout);
+        removeImageLoadingNotice();
+        onLoad();
+    };
 
-        img.onerror = () => {
-            clearTimeout(timeout);
-            console.error("Image failed to load:", src);
-            showImageLoadError();
-            unlockInteraction();
-        };
-    }
+    img.onerror = () => {
+        clearTimeout(timeout);
+        console.error("Image failed to load:", src);
+        showImageLoadError();
+        unlockInteraction();
+    };
+}
+
+/**
+ * Displays the loaded image with fade-in, then shows name buttons.
+ * @param {function} callback - Called after image is shown.
+ */
+function displayLoadedPortrait(callback) {
+    portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
+    portraitElement.classList.add("fade-in");
+
+    setTimeout(() => {
+        portraitElement.classList.remove("fade-in");
+        if (typeof callback === 'function') callback();
+    }, BUTTON_SHOW_DELAY);
+}
+
 
     /**
      * Shows a message to indicate image is still loading.
@@ -145,33 +186,17 @@ document.addEventListener("DOMContentLoaded", function() {
         }, duration);
     }
 
-    /**
-     * Parses CSV text into an array of person objects.
-     * Assumes the CSV format is: namekey;image;depicts;name;description;wikipedia
-     * @param {string} text - CSV text content.
-     * @returns {Array<Object>} Parsed entries with structured fields.
-     */
-    function parseCSV(text) {
-        const lines = text.split("\n").slice(1);
-        return lines.map(line => {
-            const parts = line.split(";");
-            if (parts.length >= 6) {
-                return {
-                    namekey: parts[0].trim(),
-                    image: parts[1].trim(),
-                    depicts: parts[2].trim(),
-                    name: parts[3].trim(),
-                    description: capitalizeFirstLetter(parts[4].trim()),
-                    wikipedia: parts[5].trim()
-                };
-            }
-        }).filter(entry => entry);
-    }
+//******** Image loading stuff ends here
 
-    /**
-     * Ensures a unique pair (not shown before) is selected from name group.
-     * @param {Array} nameGroup - People with the same name.
-     */
+
+// ==== Start of button related stuff
+
+/**
+ * Selects a unique pair of people (not shown before in the round) from the name group.
+ * @param {Array} nameGroup - List of people with the same name key.
+ * @returns {[Object, Object]} A pair of distinct people.
+ */
+
     function selectUniquePairFrom(nameGroup) {
         let pair, pairKey;
         do {
@@ -183,21 +208,71 @@ document.addEventListener("DOMContentLoaded", function() {
         return pair;
     }
 
-    /**
-     * Returns two randomly selected but distinct people from a group.
-     * @param {Array} group - List of people with same name.
-     */
-    function getTwoDistinctPeople(group) {
-        if (group.length < 2) return [null, null];
 
-        let firstIndex = Math.floor(Math.random() * group.length);
-        let secondIndex;
-        do {
-            secondIndex = Math.floor(Math.random() * group.length);
-        } while (secondIndex === firstIndex);
 
-        return [group[firstIndex], group[secondIndex]];
+/**
+ * Returns two distinct randomly selected people from a group.
+ * @param {Array} group - People with the same name.
+ */
+function getTwoDistinctPeople(group) {
+    if (group.length < 2) return [null, null];
+
+    let firstIndex = Math.floor(Math.random() * group.length);
+    let secondIndex;
+    do {
+        secondIndex = Math.floor(Math.random() * group.length);
+    } while (secondIndex === firstIndex);
+
+    return [group[firstIndex], group[secondIndex]];
+}
+
+function showNameSelectionNotice() {
+    const notice = document.createElement("div");
+    notice.id = "name-selection-notice";
+    notice.className = "name-selection-notice";
+    notice.textContent = "⏳ Selecting people...";
+    document.body.appendChild(notice);
+}
+
+function removeNameSelectionNotice() {
+    const notice = document.getElementById("name-selection-notice");
+    if (notice && notice.parentElement) {
+        notice.parentElement.removeChild(notice);
     }
+}
+
+/**
+ * Selects and prepares names with a fallback timeout message.
+ * @returns {Promise<Array>} - Resolves with shuffled names.
+ */
+function prepareNameButtonsWithTimeout() {
+    return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+            showNameSelectionNotice();
+        }, NAME_SELECTION_TIMEOUT);
+
+        const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
+        let selectedNameKey, nameGroup;
+
+        do {
+            selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
+        } while (usedNameKeys.has(selectedNameKey));
+
+        usedNameKeys.add(selectedNameKey);
+        nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
+        if (nameGroup.length < 2) return resolve(prepareNameButtonsWithTimeout());
+
+        [correctPerson, incorrectPerson] = selectUniquePairFrom(nameGroup);
+
+        clearTimeout(timeout);
+        removeNameSelectionNotice();
+
+        const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
+        createNameButtons(allNames);
+        resolve(allNames);
+    });
+}
+
 
     /**
      * Dynamically creates name selection buttons.
@@ -213,9 +288,10 @@ document.addEventListener("DOMContentLoaded", function() {
             button.textContent = name;
             button.classList.add("name-button");
             button.disabled = false;
-            button.addEventListener("click", handleSelection);
+            button.addEventListener("click", handleRoundResult);
             nameWrapper.appendChild(button);
 
+            /* ✅ Add an "OR" divider between the two names if there are more names to show */
             if (index === 0 && allNames.length > 1) {
                 const orDivider = document.createElement("div");
                 orDivider.textContent = "OR";
@@ -228,134 +304,168 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     /**
-     * Displays the loaded portrait image with a fade-in effect.
-     * @param {function} callback - Function to call after image is shown.
+     * Hides the name buttons and disables interaction.
      */
-    function showPortraitImage(callback) {
-        const spinner = document.getElementById("portrait-spinner");
-        if (spinner) spinner.style.display = "none"; // 👈 Only hide now
-
-        portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
-        portraitElement.classList.add("fade-in");
-
-        setTimeout(() => {
-            portraitElement.classList.remove("fade-in");
-            if (typeof callback === 'function') callback();
-        }, PORTRAIT_BUTTON_DELAY);
-    }
-
-function addOverlayNextRoundListeners() {
-  const overlay = document.getElementById("overlay");
-  if (!overlay) return;
-
-  let touchStartY = 0;
-  let touchEndY = 0;
-
-  overlay.addEventListener("click", () => {
-    maybeAdvanceToNextRound();
-  }, { once: true });
-
-  overlay.addEventListener("touchstart", event => {
-    touchStartY = event.changedTouches[0].screenY;
-  }, { once: true });
-
-  overlay.addEventListener("touchend", event => {
-    touchEndY = event.changedTouches[0].screenY;
-    if (touchStartY - touchEndY > SWIPE_THRESHOLD) {
-      maybeAdvanceToNextRound();
-    }
-  }, { once: true });
-}
-
-
-    /**
-     * Renders the initial overlay with person description and placeholder extract.
-     */
-function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
-  wikiInfo.innerHTML = `
-    <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-      <p class="description">${correctPerson.description}</p>
-      <h2>${name}</h2>
-      <p id="wiki-extract">Loading Wikipedia summary...</p>
-      <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
-    </div>
-  `;
-
-  wikiInfo.style.display = "block";
-
-  // Fade in after short delay
-  setTimeout(() => {
-    const overlay = document.getElementById("overlay");
-    if (overlay) {
-      overlay.classList.add("visible");
-    }
-  }, 500); // Delay matches CSS transition timing
-
- addOverlayNextRoundListeners()
-}
-
-
-
-
-    /**
-     * Loads a new game round by selecting a unique pair of people,
-     * updating the UI and safely handling image transitions.
-     */
-    function loadNewRound() {
-        if (interactionLocked || portraits.length < 2) return;
-        interactionLocked = true;
-        roundPlayed = false;
-
-        const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
-        let selectedNameKey, nameGroup;
-
-
-      //HIET GAAT IEYS MIS BIJ HET SELECTEREN VA NDE 2 PERSONEN!!
-
-        do {
-            selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
-        } while (usedNameKeys.has(selectedNameKey));
-
-        usedNameKeys.add(selectedNameKey);
-        nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
-        if (nameGroup.length < 2) return loadNewRound();
-
-        [correctPerson, incorrectPerson] = selectUniquePairFrom(nameGroup);
-        const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
-
-        resetOverlayState();
-
-        createNameButtons(allNames);
+    function hideNameButtons() {
         nameOptions.style.display = "none";
-
-        const spinner = document.getElementById("portrait-spinner");
-        if (spinner) spinner.style.display = "block";
-
-        preloadPortraitImage(correctPerson.image, () => {
-            portraitElement.classList.add("fade-out");
-            nameOptions.classList.add("fade-out");
-
-            setTimeout(() => {
-                portraitElement.classList.remove("fade-out");
-                nameOptions.classList.remove("fade-out");
-                showPortraitImage(() => {
-                    nameOptions.style.display = "flex";
-                    unlockInteraction();
-                });
-            }, PORTRAIT_SHOW_DELAY);
+        document.querySelectorAll(".name-button").forEach(button => {
+            button.disabled = true;
         });
     }
 
+// ==== End of button related stuff
+
+//=================BEGIN Overlay related stuff
+
+
+/**
+ * Clears the overlay content, hides the name buttons  and resets interaction.
+ */
+function clearOverlay() {
+    wikiInfo.innerHTML = "";
+    wikiInfo.style.display = "none";
+
+    const oldOverlay = document.querySelector(".overlay");
+    if (oldOverlay) {
+        oldOverlay.style.pointerEvents = "auto";
+        oldOverlay.style.touchAction = "auto";
+    }
+
+    // Hide and disable name buttons during overlay display
+    nameOptions.style.display = "none";
+    document.querySelectorAll(".name-button").forEach(button => {
+        button.disabled = true;
+    });
+}
+
+/**
+ * Fetches the Wikipedia summary content and updates the overlay.
+ * @param {string} wikiTitle - Wikipedia page title.
+ * @returns {Promise<void>} Resolves when fetch is complete.
+ */
+function fetchWikiExtract(wikiTitle) {
+    return fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
+        .then(response => response.json())
+        .then(data => {
+            let extract = data.extract || "Sorry, there is no intro available from Wikipedia.";
+
+            if (extract.length > MAX_CHARACTERS) {
+                extract = extract.substring(0, MAX_CHARACTERS) + "...";
+            }
+
+            const extractElement = document.getElementById("wiki-extract");
+            if (extractElement) {
+                extractElement.textContent = extract;
+                extractElement.style.color = "#fff";
+                extractElement.style.fontStyle = "normal";
+            }
+
+            setTimeout(checkGameEnd, 0);
+        })
+        .catch(error => {
+            const extractElement = document.getElementById("wiki-extract");
+            if (extractElement) {
+                extractElement.textContent = "Sorry, I could not load intro from Wikipedia.";
+            }
+            setTimeout(checkGameEnd, 0);
+        });
+}
+
+
+/**
+ * Shows the overlay after Wikipedia data has loaded.
+ * @param {string} name
+ * @param {string} wikipediaURL
+ * @param {boolean} wasCorrect
+ */
+async function showPersonOverlay(name, wikipediaURL, wasCorrect) {
+    hideNameButtons();
+    createOverlayHTML(name, wikipediaURL, wasCorrect);
+    addOverlayListeners();
+    const wikiTitle = wikipediaURL.split("/").pop();
+    await fetchWikiExtract(wikiTitle);
+
+    // ✅ Only now allow user to proceed
+    setTimeout(() => {
+        interactionLocked = false;
+    }, NEXT_ROUND_LOCK); // Lock interaction after showing result message and overlay (ms) - user can't click too quickly and progress to next round
+}
+
+
+
+/**
+ * Constructs the HTML for the overlay with placeholder Wikipedia extract.
+ */
+function createOverlayHTML(name, wikipediaURL, wasCorrect) {
+    wikiInfo.innerHTML = `
+        <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
+          <p class="description">${correctPerson.description}</p>
+          <h2>${name}</h2>
+          <p id="wiki-extract">Loading Wikipedia summary...</p>
+          <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+        </div>
+    `;
+    wikiInfo.style.display = "block";
+}
+
     /**
-     * Handles the user's name selection.
-     * - Compares selected name to the correct answer
-     * - Updates score and displays result message
-     * - Locks interactions briefly to prevent rapid input
-     * - Initiates Wikipedia summary loading
-     *
-     * @param {Event} event - The click event from the name button
+     * Adds click and swipe listeners to the overlay to advance to the next round.
      */
-    function handleSelection(event) {
+    function addOverlayListeners() {
+        const overlay = document.getElementById("overlay");
+        if (!overlay) return;
+
+        let touchStartY = 0;
+        let touchEndY = 0;
+
+        overlay.addEventListener("click", (event) => {
+            // ✅ Prevent clicks on the Wikipedia link from triggering next round
+            if (event.target.closest(".wikipedia-link")) return;
+               loadNewRound();
+        }, { once: true });
+
+        overlay.addEventListener("touchstart", event => {
+            touchStartY = event.changedTouches[0].screenY;
+        }, { once: true });
+
+        overlay.addEventListener("touchend", event => {
+            touchEndY = event.changedTouches[0].screenY;
+
+            // ✅ Ignore swipe if it started/ended on the link
+            if (event.target.closest(".wikipedia-link")) return;
+
+            if (touchStartY - touchEndY > SWIPE_THRESHOLD) {
+                loadNewRound();
+            }
+        }, { once: true });
+    }
+
+
+
+//=================END Overlay related stuff
+
+
+// ===== New game round functions
+ /**
+ * Loads a new game round by selecting a unique pair of people,
+ * updating the UI and safely handling image transitions.
+ */
+async function loadNewRound() {
+    if (interactionLocked || portraits.length < 2) return;
+    interactionLocked = true;
+    roundPlayed = false;
+
+    resetResultMessage();
+    clearOverlay();
+
+    const allNames = await prepareNameButtonsWithTimeout();
+
+    handlePortraitLoadAndDisplay(correctPerson.image, () => {
+        nameOptions.style.display = "flex";
+        unlockInteraction();
+    });
+}
+    function handleRoundResult(event) {
         if (interactionLocked) return;
         interactionLocked = true;
         const selectedName = event.target.textContent;
@@ -372,25 +482,19 @@ function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
         let sadFace = '<img src="media/red-sadface.png" alt="Sad">';
 
         if (selectedName === correctPerson.name) {
-            event.target.style.color = "green";
             score.correct++;
             resultMessage.innerHTML = `${happyFace} <span>Spot on! This was ${correctPerson.name}.</span>`;
             wasCorrect = true;
         }
         else {
-            event.target.style.color = "red";
             score.wrong++;
             resultMessage.innerHTML = `${sadFace} <span>Oh, no! This was not ${incorrectPerson.name}, it was ${correctPerson.name}.</span>`;
         }
-
         resultMessage.style.display = "flex"; // Show message with flexbox
 
         updateScoreBoard();
-        fetchWikiSummary(correctPerson.name, correctPerson.wikipedia, wasCorrect);
+        showPersonOverlay(correctPerson.name, correctPerson.wikipedia, wasCorrect);
 
-        setTimeout(() => {
-            interactionLocked = false;
-        }, RESULT_INTERACTION_LOCK); // unlock after overlay is ready
     }
 
     /**
@@ -433,6 +537,7 @@ function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
         scoreBoard.appendChild(wrongRow);
     }
 
+// Still to worl on game and and loading the next round of games
     function checkGameEnd() {
         let gifURL = "";
         let messageText = "";
@@ -499,78 +604,9 @@ function renderInitialOverlay(name, wikipediaURL, wasCorrect) {
         updateScoreBoard();
     }
 
-    /**
-     * Fetches and displays the Wikipedia summary for a person.
-     * @param {string} name - The person's name.
-     * @param {string} wikipediaURL - URL to the Wikipedia page.
-     * @param {boolean} wasCorrect - Whether the guess was correct.
-     */
-    function fetchWikiSummary(name, wikipediaURL, wasCorrect) {
-        try {
-            const wikiTitle = wikipediaURL.split("/").pop();
-            nameOptions.style.display = "none";
 
-            renderInitialOverlay(name, wikipediaURL, wasCorrect);
 
-            const overlay = document.querySelector(".overlay");
-            if (overlay) {
-                overlay.style.pointerEvents = "none";
-                overlay.style.touchAction = "none";
 
-                // Always re-enable after 2s
-                setTimeout(() => {
-                    overlay.style.pointerEvents = "auto";
-                    overlay.style.touchAction = "auto";
-                }, OVERLAY_INTERACTION_DELAY);
-            }
-
-            fetchWikiExtract(wikiTitle);
-        }
-        catch (error) {
-            console.error("Error fetching Wikipedia summary:", error);
-
-            // 🛡️ Fallback unlock
-            const overlay = document.querySelector(".overlay");
-            if (overlay) {
-                overlay.style.pointerEvents = "auto";
-                overlay.style.touchAction = "auto";
-            }
-
-            unlockInteraction();
-        }
-    }
-
-    /**
-     * Fetches the Wikipedia summary content and updates the overlay.
-     * @param {string} wikiTitle - Wikipedia page title.
-     */
-    function fetchWikiExtract(wikiTitle) {
-        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
-            .then(response => response.json())
-            .then(data => {
-                let extract = data.extract || "Sorry, there is no intro available from Wikipedia.";
-
-                if (extract.length > MAX_CHARACTERS) {
-                    extract = extract.substring(0, MAX_CHARACTERS) + "...";
-                }
-
-                const extractElement = document.getElementById("wiki-extract");
-                if (extractElement) {
-                    extractElement.textContent = extract;
-                    extractElement.style.color = "#fff";
-                    extractElement.style.fontStyle = "normal";
-                }
-
-                setTimeout(checkGameEnd, 0);
-            })
-            .catch(error => {
-                const extractElement = document.getElementById("wiki-extract");
-                if (extractElement) {
-                    extractElement.textContent = "Sorry, I could not load intro from Wikipedia.";
-                }
-                setTimeout(checkGameEnd, 0);
-            });
-    }
 
     /**
      * Asynchronously fetches the CSV data for portraits,
