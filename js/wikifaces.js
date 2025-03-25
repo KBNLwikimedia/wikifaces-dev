@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const GAME_END_COUNTDOWN_START = 5; // Countdown seconds after game ends and new game begin
     const GAME_END_INTERVAL_DELAY = 1000; // Countdown tick interval (ms)
 
-    const NAME_SELECTION_TIMEOUT = 1000; // 2 seconds, if it takes longer to select names, show a message
+    const NAME_SELECTION_TIMEOUT = 1000; // 1 seconds, if it takes longer to select names, show a message
 
     let portraits = [];
     let correctPerson = null;
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function() {
     /**
      * Clears the result message area before a new round.
      */
-    function resetResultMessage() {
+    function clearResultMessage() {
         resultMessage.textContent = "";
         resultMessage.style.display = "none";
     }
@@ -209,7 +209,6 @@ function displayLoadedPortrait(callback) {
     }
 
 
-
 /**
  * Returns two distinct randomly selected people from a group.
  * @param {Array} group - People with the same name.
@@ -242,6 +241,17 @@ function removeNameSelectionNotice() {
 }
 
 /**
+ * Randomly shuffles the order of two names.
+ * Ensures the correct name doesn't always appear first.
+ * @param {string} name1
+ * @param {string} name2
+ * @returns {Array<string>} - A shuffled pair
+ */
+function randomShuffleTwoNames(name1, name2) {
+    return Math.random() < 0.5 ? [name1, name2] : [name2, name1];
+}
+
+/**
  * Selects and prepares names with a fallback timeout message.
  * @returns {Promise<Array>} - Resolves with shuffled names.
  */
@@ -267,7 +277,7 @@ function prepareNameButtonsWithTimeout() {
         clearTimeout(timeout);
         removeNameSelectionNotice();
 
-        const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
+        const allNames = randomShuffleTwoNames(correctPerson.name, incorrectPerson.name);
         createNameButtons(allNames);
         resolve(allNames);
     });
@@ -442,26 +452,27 @@ function addOverlayListeners() {
 //=================END Overlay related stuff
 
 
-// ===== New game round functions
- /**
- * Loads a new game round by selecting a unique pair of people,
- * updating the UI and safely handling image transitions.
- */
-async function loadNewRound() {
-    if (interactionLocked || portraits.length < 2) return;
-    interactionLocked = true;
-    roundPlayed = false;
+    // ===== New game round functions
+     /**
+     * Loads a new game round by selecting a unique pair of people,
+     * updating the UI and safely handling image transitions.
+     */
+    async function loadNewRound() {
+        if (interactionLocked || portraits.length < 2) return;
+        interactionLocked = true;
+        roundPlayed = false;
 
-    resetResultMessage();
-    clearOverlay();
+        clearResultMessage();
+        clearOverlay();
 
-    const allNames = await prepareNameButtonsWithTimeout();
+        const allNames = await prepareNameButtonsWithTimeout();
 
-    handlePortraitLoadAndDisplay(correctPerson.image, () => {
-        nameOptions.style.display = "flex";
-        unlockInteraction();
-    });
-}
+        handlePortraitLoadAndDisplay(correctPerson.image, () => {
+            nameOptions.style.display = "flex";
+            unlockInteraction();
+        });
+    }
+
     function handleRoundResult(event) {
         if (interactionLocked) return;
         interactionLocked = true;
@@ -623,11 +634,6 @@ async function loadNewRound() {
     }
 
 // ================= Main function stuff
-    gameContainer.addEventListener("touchend", (event) => {
-        if (!event.target.closest("a") && roundPlayed) {
-            loadNewRound();
-        }
-    });
 
     document.addEventListener("keydown", (event) => {
         if (event.code === "Space" && roundPlayed) {
