@@ -1,26 +1,26 @@
 // For usage in https://jshint.com/
 /* jshint esversion: 8 */
 document.addEventListener("DOMContentLoaded", function() {
-    const DATA_FILE = "data/wikifaces-datacache2.csv";
+    const DATA_FILE = "data/wikifaces-datacache.csv";
     const MAX_ROUNDS = 5; // Configurable number of rounds = number of circles in the scoreboard
     const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
 
     // === Global Timeout Configurations - in milliseconds ===
-    const BUTTON_SHOW_DELAY = 300; // Interval between showing the portrait and showing the name buttons
+    const BUTTON_SHOW_DELAY = 500; // Interval between showing the portrait and showing the name buttons
     const IMAGE_LOADING_MESSAGE_DELAY = 5000; // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
     const IMAGE_ERROR_DISPLAY_DURATION = 10000; // How long the image loading error message is shown (ms)
 
     const SWIPE_THRESHOLD = 100; // Minimum swipe distance to trigger next round
 
     // When the result banner is shown (✅ or ❌), this defines how long interaction is locked afterward to prevent double-pressing or skipping too quickly.
-    NEXT_ROUND_LOCK = 1000; // Lock interaction after showing result banner and overlay (ms) - user can't click too quickly and progress to next round
+    const NEXT_ROUND_LOCK = 1000; // Lock interaction after showing result banner and overlay (ms) - user can't click too quickly and progress to next round
 
     // Need to better understand the following constants
     const GAME_END_DISPLAY_DELAY = 1600; // Delay before showing win/loss GIF (ms)
     const GAME_END_COUNTDOWN_START = 5; // Countdown seconds after game ends and new game begin
     const GAME_END_INTERVAL_DELAY = 1000; // Countdown tick interval (ms)
 
-    const NAME_SELECTION_TIMEOUT = 1000; // 1 seconds, if it takes longer to select names, show a message
+    const NAME_SELECTION_TIMEOUT = 1000; // 1 seconds, if it takes longer to select name pair, show a message
 
     let portraits = [];
     let correctPerson = null;
@@ -32,9 +32,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let roundPlayed = false;
     let usedNameKeys = new Set();
     let usedPairs = new Set();
-    let nextRoundLocked = false;
 
-    const gameContainer = document.getElementById("game-container");
     const scoreBoard = document.getElementById("score-board");
     const resultBanner = document.getElementById("result-banner");
     const portraitElement = document.getElementById("portrait");
@@ -97,13 +95,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    /**
-     * Clears the result banner area before a new round.
-     */
-    function clearResultBanner() {
-        resultBanner.textContent = "";
-        resultBanner.style.display = "none";
-    }
+
 
     //******** Image loading stuff starts here
 
@@ -155,10 +147,7 @@ document.addEventListener("DOMContentLoaded", function() {
      */
     function displayLoadedPortrait(callback) {
         portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
-        portraitElement.classList.add("fade-in");
-
         setTimeout(() => {
-            portraitElement.classList.remove("fade-in");
             if (typeof callback === 'function') callback();
         }, BUTTON_SHOW_DELAY);
     }
@@ -204,44 +193,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ==== Start of button related stuff
 
-    /**
-     * Selects a unique pair of people (not shown before in the round) from the name group.
-     * @param {Array} nameGroup - List of people with the same name key.
-     * @returns {[Object, Object]} A pair of distinct people.
-     */
-
-    function selectUniquePairFrom(nameGroup) {
-        let pair, pairKey;
-        do {
-            pair = getTwoDistinctPeople(nameGroup);
-            pairKey = [pair[0].depicts, pair[1].depicts].sort().join("|");
-        } while (usedPairs.has(pairKey));
-
-        usedPairs.add(pairKey);
-        return pair;
-    }
-
-    /**
-     * Returns two distinct randomly selected people from a group.
-     * @param {Array} group - People with the same name.
-     */
-    function getTwoDistinctPeople(group) {
-        if (group.length < 2) return [null, null];
-
-        let firstIndex = Math.floor(Math.random() * group.length);
-        let secondIndex;
-        do {
-            secondIndex = Math.floor(Math.random() * group.length);
-        } while (secondIndex === firstIndex);
-
-        return [group[firstIndex], group[secondIndex]];
-    }
 
     function showNameSelectionNotice() {
         const notice = document.createElement("div");
         notice.id = "name-selection-notice";
         notice.className = "name-selection-notice";
-        notice.textContent = "⏳ Selecting people...";
+        notice.textContent = "⏳ Please wait, selecting two random persons...";
         document.body.appendChild(notice);
     }
 
@@ -263,88 +220,176 @@ document.addEventListener("DOMContentLoaded", function() {
         return Math.random() < 0.5 ? [name1, name2] : [name2, name1];
     }
 
+/**
+ * Logs all used person pairs by name, not just by their Wikidata URLs.
+ */
+function logUsedNamePairs() {
+    console.log("Used name pairs:");
+    Array.from(usedPairs).forEach(key => {
+        const [id1, id2] = key.split("|");
+        const person1 = portraits.find(p => p.depicts === id1);
+        const person2 = portraits.find(p => p.depicts === id2);
+        if (person1 && person2) {
+            console.log(`- ${person1.name} (${person1.depicts}) ↔ ${person2.name} (${person2.depicts})`);
+        }
+    });
+}
+
+
     /**
-     * Selects and prepares names with a fallback timeout message.
-     * @returns {Promise<Array>} - Resolves with shuffled names.
+     * Selects a unique pair of people (not shown before in the round) from the name group.
+     * @param {Array} nameGroup - List of people with the same name key.
+     * @returns {[Object, Object]} A pair of distinct people.
      */
-    function prepareNameButtonsWithTimeout() {
-        return new Promise((resolve) => {
-            const timeout = setTimeout(() => {
-                showNameSelectionNotice();
-            }, NAME_SELECTION_TIMEOUT);
-
-            const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
-            let selectedNameKey, nameGroup;
-
-            do {
-                selectedNameKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
-            } while (usedNameKeys.has(selectedNameKey));
-
-            usedNameKeys.add(selectedNameKey);
-            nameGroup = portraits.filter(p => p.namekey === selectedNameKey);
-            if (nameGroup.length < 2) return resolve(prepareNameButtonsWithTimeout());
-
-            [correctPerson, incorrectPerson] = selectUniquePairFrom(nameGroup);
-
-            clearTimeout(timeout);
-            removeNameSelectionNotice();
-
-            const allNames = randomShuffleTwoNames(correctPerson.name, incorrectPerson.name);
-            createNameButtons(allNames);
-            resolve(allNames);
-        });
+    function selectUniquePairFrom(nameGroup) {
+        let pair, pairKey;
+        do {
+            pair = getTwoDistinctPeople(nameGroup);
+            pairKey = [pair[0].depicts, pair[1].depicts].sort().join("|");
+        } while (usedPairs.has(pairKey));
+        usedPairs.add(pairKey);
+        return pair;
     }
 
     /**
-     * Dynamically creates name selection buttons.
-     * @param {Array} allNames - Names to display.
+     * Returns two distinct randomly selected people from a group.
+     * @param {Array} group - People with the same name.
      */
-    function createNameButtons(allNames) {
-        nameOptions.innerHTML = "";
-        const nameWrapper = document.createElement("div");
-        nameWrapper.classList.add("name-wrapper");
+    function getTwoDistinctPeople(group) {
+        if (group.length < 2) return [null, null];
 
-        allNames.forEach((name, index) => {
-            const button = document.createElement("name-button");
-            button.textContent = name;
-            button.classList.add("name-button");
-            button.disabled = false;
-            button.addEventListener("click", handleRoundResult);
-            nameWrapper.appendChild(button);
+        let firstIndex = Math.floor(Math.random() * group.length);
+        let secondIndex;
+        do {
+            secondIndex = Math.floor(Math.random() * group.length);
+        } while (secondIndex === firstIndex);
 
-            /* ✅ Add an "OR" divider between the two names if there are more names to show */
-            if (index === 0 && allNames.length > 1) {
-                const orDivider = document.createElement("div");
-                orDivider.textContent = "OR";
-                orDivider.classList.add("or-divider");
-                nameWrapper.appendChild(orDivider);
+        return [group[firstIndex], group[secondIndex]];
+    }
+
+
+/**
+ * Creates and displays name selection buttons inside the pre-defined .button-wrapper container.
+ * Adds click listeners to each button and includes an "OR" divider between two names.
+ *
+ * @param {Array} namesPair - An array containing exactly two names to be displayed.
+ */
+function createNameButtons(namesPair) {
+    try {
+
+    if (!Array.isArray(namesPair) || namesPair.length !== 2) {
+        console.error("createNameButtons expects exactly 2 names:", namesPair);
+        return;
+    }
+
+    clearNameButtons(); // Clear existing buttons
+
+    // First button
+    const firstButton = document.createElement("name-button");
+    firstButton.textContent = namesPair[0];
+    firstButton.classList.add("name-button");
+    firstButton.disabled = false;
+    firstButton.addEventListener("click", handleRoundResult);
+    nameOptions.appendChild(firstButton);
+
+    // "OR" divider
+    const orDivider = document.createElement("div");
+    orDivider.textContent = "OR";
+    orDivider.classList.add("or-divider");
+    nameOptions.appendChild(orDivider);
+
+    // Second button
+    const secondButton = document.createElement("name-button");
+    secondButton.textContent = namesPair[1];
+    secondButton.classList.add("name-button");
+    secondButton.disabled = false;
+    secondButton.addEventListener("click", handleRoundResult);
+    nameOptions.appendChild(secondButton);
+
+    } catch (error) {
+        console.error("Failed to create name buttons:", error);
+    }
+}
+
+/**
+ * Shows the name buttons with a timeout message if it takes too long.
+ * @returns {Promise<Array>} Resolves with shuffled name pair
+ */
+/**
+ * Selects and prepares names with a fallback timeout message.
+ * Allows nameKeys to be reused across rounds as long as the person-pair is unique.
+ * @returns {Promise<Array>} - Resolves with shuffled names.
+ */
+function showNameButtonsWithTimeout() {
+    return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+            showNameSelectionNotice();
+        }, NAME_SELECTION_TIMEOUT);
+
+        const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
+        let selectedNameKey = null;
+        let nameGroup = [];
+        let attempts = 0;
+
+        while (attempts < 100) {
+            const candidateKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
+            const candidateGroup = portraits.filter(p => p.namekey === candidateKey);
+
+            if (candidateGroup.length >= 2) {
+                const testPair = selectUniquePairFrom(candidateGroup);
+                if (testPair[0] && testPair[1]) {
+                    selectedNameKey = candidateKey;
+                    nameGroup = candidateGroup;
+                    [correctPerson, incorrectPerson] = testPair;
+                    break;
+                }
             }
-        });
+            attempts++;
+        }
 
-        nameOptions.appendChild(nameWrapper);
-    }
+        clearTimeout(timeout);
+        removeNameSelectionNotice();
+
+        if (!correctPerson || !incorrectPerson) {
+            return resolve(prepareNameButtonsWithTimeout());
+        }
+
+        const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
+        createNameButtons(allNames);
+        resolve(allNames);
+    });
+}
+
+
 
     /**
      * Hides the name buttons and disables interaction.
      */
-    function hideNameButtons() {
+    function clearNameButtons() {
+        nameOptions.innerHTML = ""; // Clear existing buttons
+        nameOptions.textContent = "";
         nameOptions.style.display = "none";
-        document.querySelectorAll(".name-button").forEach(button => {
-            button.disabled = true;
-        });
     }
-
-    // ==== End of button related stuff
-
-    //=================BEGIN Overlay related stuff
 
     /**
      * Clears the overlay content
      */
     function clearOverlay() {
+        wikiInfo.innerHTML = "";
         wikiInfo.textContent = "";
         wikiInfo.style.display = "none";
     }
+
+    /**
+     * Clears the result banner area before a new round.
+     */
+    function clearResultBanner() {
+        resultBanner.innerHTML = "";
+        resultBanner.textContent = "";
+        resultBanner.style.display = "none";
+    }
+
+
 
     /**
      * Fetches the Wikipedia summary and updates the overlay extract area.
@@ -382,13 +427,13 @@ document.addEventListener("DOMContentLoaded", function() {
     /**
      * Constructs the HTML for the overlay with placeholder Wikipedia extract.
      */
-    function createOverlayHTML(name, wikipediaURL, wasCorrect) {
+    function createOverlayHTML(person, wasCorrect) {
         wikiInfo.innerHTML = `
         <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-          <p class="description">${correctPerson.description}</p>
-          <h2>${name}</h2>
+          <p class="description">${person.description}</p>
+          <h2>${person.name}</h2>
           <p id="wiki-extract"></p>
-          <a href="${wikipediaURL}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+          <a href="${person.wikipedia}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
         </div>
     `;
         wikiInfo.style.display = "block";
@@ -434,14 +479,14 @@ document.addEventListener("DOMContentLoaded", function() {
      * @param {string} wikipediaURL
      * @param {boolean} wasCorrect
      */
-    async function showPersonOverlay(name, wikipediaURL, wasCorrect) {
+    async function showPersonOverlay(person, wasCorrect) {
         /* Showing a person overlay involves: */
 
         /* 1 - Creating the overlay HTML */
-        createOverlayHTML(name, wikipediaURL, wasCorrect);
+        createOverlayHTML(person, wasCorrect);
 
         /* 2 - Fetching the Wikipedia extract */
-        await fetchWikiExtract(wikipediaURL.split("/").pop());
+        await fetchWikiExtract(person.wikipedia.split("/").pop());
 
         /* 3 - Delayed adding of click/swipe listeners to the overlay */
         // ⏳ Delay adding click/swipe/spacebar listeners to prevent accidental skipping
@@ -467,8 +512,10 @@ document.addEventListener("DOMContentLoaded", function() {
         clearResultBanner();
         /* 2 - Clearing the overlay  */
         clearOverlay();
-        /* 3 - Loading the name buttons */
-        const allNames = await prepareNameButtonsWithTimeout();
+        /* 3 - Loading the names pair buttons */
+        const namesPair = await showNameButtonsWithTimeout();
+
+        logUsedNamePairs();
         /* 4 - Loading the portrait image. This needs to happen *after* name buttons have been loaded in step 3. */
         handlePortraitLoadAndDisplay(correctPerson.image, () => {
             nameOptions.style.display = "flex";
@@ -494,56 +541,56 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         // Now display all results stuff
-        setTimeout(() => {
-            resultBanner.style.display = "flex"; // Show message with flexbox
-            showAndUpdateScoreBoard();
-            hideNameButtons();
-            showPersonOverlay(correctPerson.name, correctPerson.wikipedia, wasCorrect);
-        }, 350);
-
+       resultBanner.style.display = "flex"; // Show message with flexbox
+       showAndUpdateScoreBoard();
+       clearNameButtons();
+       showPersonOverlay(correctPerson, wasCorrect);
         // Deze hierdner nog chcken, wanner dee precie moet triggeren!!!
         //checkGameEnd()
     }
 
-    /**
-     * Updates the visual scoreboard with correct/wrong counts and circles.
-     */
-    function showAndUpdateScoreBoard() {
+
+
+/**
+ * Visually updates the scoreboard with the current number of correct and wrong answers.
+ * Each row shows a count label followed by a row of circles representing progress.
+ * Green = correct, red = wrong. Filled circles indicate number achieved.
+ */
+function showAndUpdateScoreBoard() {
+    try {
         scoreBoard.innerHTML = "";
 
-        const correctRow = document.createElement("div");
-        const correctLabel = document.createElement("span");
-        correctLabel.textContent = `${score.correct}`;
-        correctLabel.classList.add("score-label");
-        correctRow.classList.add("score-row");
-        correctRow.appendChild(correctLabel);
+        const stats = [
+            { count: score.correct, labelClass: "score-label", circleBase: "light-green", circleFilled: "dark-green" },
+            { count: score.wrong,   labelClass: "score-label", circleBase: "light-red",   circleFilled: "dark-red" }
+        ];
 
-        const wrongRow = document.createElement("div");
-        const wrongLabel = document.createElement("span");
-        wrongLabel.textContent = `${score.wrong}`;
-        wrongLabel.classList.add("score-label");
-        wrongRow.classList.add("score-row");
-        wrongRow.appendChild(wrongLabel);
+        stats.forEach(({ count, labelClass, circleBase, circleFilled }) => {
+            const row = document.createElement("div");
+            row.classList.add("score-row");
 
-        for (let i = 0; i < MAX_ROUNDS; i++) {
-            const correctCircle = document.createElement("div");
-            correctCircle.classList.add("score-circle", "light-green");
-            if (i < score.correct) {
-                correctCircle.classList.add("dark-green");
+            const label = document.createElement("span");
+            label.textContent = `${count}`;
+            label.classList.add(labelClass);
+            row.appendChild(label);
+
+            for (let i = 0; i < MAX_ROUNDS; i++) {
+                const circle = document.createElement("div");
+                circle.classList.add("score-circle", circleBase);
+                if (i < count) {
+                    circle.classList.add(circleFilled);
+                }
+                row.appendChild(circle);
             }
-            correctRow.appendChild(correctCircle);
 
-            const wrongCircle = document.createElement("div");
-            wrongCircle.classList.add("score-circle", "light-red");
-            if (i < score.wrong) {
-                wrongCircle.classList.add("dark-red");
-            }
-            wrongRow.appendChild(wrongCircle);
-        }
+            scoreBoard.appendChild(row);
+        });
 
-        scoreBoard.appendChild(correctRow);
-        scoreBoard.appendChild(wrongRow);
+    } catch (error) {
+        console.error("⚠️ Error updating scoreboard:", error);
     }
+}
+
 
     // Still to worl on game and and loading the next round of games
     function checkGameEnd() {
