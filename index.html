@@ -15,7 +15,7 @@
     <!-- Open Graph Meta Tags (for better sharing on social media) -->
     <meta property="og:title" content="WikiFaces - Faces from the archives of Wikimedia">
     <meta property="og:description" content="Discover historical portraits from the Wikimedia archives. Dive into the faces of history.">
-    <meta property="og:image" content="https://www.wikifaces.org/media/wikifaces-logo.png">
+    <meta property="og:image" content="https://www.wikifaces.org/media/wikifaces-logo.svg">
     <meta property="og:url" content="https://www.wikifaces.org">
     <meta property="og:type" content="website">
 
@@ -23,7 +23,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="WikiFaces - Faces from the archives of Wikimedia">
     <meta name="twitter:description" content="Explore historical portraits from Wikimedia archives and discover the stories behind them.">
-    <meta name="twitter:image" content="https://www.wikifaces.org/media/wikifaces-logo.png">
+    <meta name="twitter:image" content="https://www.wikifaces.org/media/wikifaces-logo.svg">
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://www.wikifaces.org">
@@ -33,7 +33,7 @@
     <link rel="stylesheet" href="css/wikifaces.css">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="media/wikifaces.ico">
+    <link rel="icon" type="image/svg+xml" href="media/wikifaces-icon.svg">
 
     <!-- JavaScript -->
     <script type="text/javascript" src="js/wikifaces.js"></script>
@@ -51,7 +51,7 @@
         "name": "WikiFaces Team",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://www.wikifaces.org/media/wikifaces-logo.png"
+          "url": "https://www.wikifaces.org/media/wikifaces-logo.svg"
         }
       },
       "potentialAction": {
@@ -65,35 +65,29 @@
 </head>
 <body>
     <!-- WikiFaces Logo in the Top Left -->
-    <img id="logo" src="media/wikifaces-logo.png" alt="WikiFaces Logo">
+    <img id="logo" src="media/wikifaces-logo.svg" alt="WikiFaces Logo">
 
     <!-- Game Container -->
     <div id="game-container">
-        <!-- Full-screen portrait -->
-        <div id="portrait"></div>
-        <div id="portrait-spinner" ></div>
-
-        <div id="score-board">
+        <!-- Result message -->
+        <p id="result-banner"></p>
+          <div id="score-board">
           <div id="correct-row" class="score-row"></div>
           <div id="wrong-row" class="score-row"></div>
         </div>
-
-        <!-- Wikipedia Info Overlay -->
-        <div id="wiki-info" class="overlay"></div>
+        <!-- Full-screen portrait -->
+        <div id="portrait-spinner" ></div>
+        <div id="portrait"></div>
         <!-- Name selection buttons -->
         <div id="buttons"></div>
-
-        <!-- Result message -->
-        <p id="result-message"></p>
-
-        <!-- Scoreboard (Moved to Right) -->
-
+        <!-- Wikipedia Info Overlay -->
+        <div id="wiki-info" class="overlay"></div>
     </div>
 
     <!-- Footer -->
     <footer id="footer">
         <div>
-            <a href="https://www.kb.nl" target="_blank">WikiFaces</a>
+            <a href="https://www.wikifaces.org" target="_blank">WikiFaces</a>
         </div>
         <div><p>Faces from the archives of Wikimedia</p></div>
         <div>

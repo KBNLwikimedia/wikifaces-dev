@@ -139,6 +139,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0.4; /* Initially semi-transparent */
 }
 
 /* Default light colors */
@@ -157,6 +158,7 @@ body {
     background-size: contain; /* Ensures image fits inside the circle */
     background-position: center; /* Centers the image */
     background-repeat: no-repeat; /* Prevents tiling */
+    opacity: 1.0; /* Fully opaque */
 }
 
 /* Dark red - Show red Sad face PNG */
@@ -166,6 +168,7 @@ body {
     background-size: contain; /* Ensures image fits inside the circle */
     background-position: center; /* Centers the image */
     background-repeat: no-repeat; /* Prevents tiling */
+    opacity: 1.0; /* Fully opaque */
 }
 
 .score-label {
@@ -232,6 +235,7 @@ body {
     backdrop-filter: blur(6px);
     background: rgba(0, 0, 0, 0.5);
     text-align: left;
+    outline: none;
     z-index: 20;
     justify-content: space-between;
     border: 0px solid magenta;
@@ -248,7 +252,7 @@ body {
     font-size: 16px; /* Make it smaller */
     font-style: italic; /* Make it italic */
     padding: 10px 0px 3px 0px; /* TOP RIGHT BOTTOM LEFT; */
-    width:70%;
+    width:90%;
 }
 
 .overlay h2 {
@@ -271,9 +275,15 @@ body {
 #wiki-extract {
     font-style: italic;
     color: #ccc; /* Light gray for loading state */
-    transition: color 1.5s ease, font-style 1.5s ease;
+    transition: color 1.0s ease, font-style 1.0s ease;
     padding: 0px 0px 5px 0px; /* TOP RIGHT BOTTOM LEFT; */
 }
+
+#wiki-extract.loaded {
+  font-style: normal;
+  color: #fff;
+}
+
 
 /* Ensure Wikipedia link is styled correctly */
 .overlay a.wikipedia-link {
@@ -282,7 +292,7 @@ body {
   text-decoration: none;
   font-weight: 600;
   display: inline-block;
-  padding: 10px 10px 10px 0px; /* top, right, bottom, left */
+  padding: 10px 10px 20px 0px; /* top, right, bottom, left */
   background-color: rgba(0, 0, 0, 0);
   border-radius: 5px;
   pointer-events: auto; /* ✅ Must be auto when clickable */
@@ -302,9 +312,9 @@ body {
     background: rgba(200, 0, 0, 0.4);
 }
 
-/* Per game round result Message on top of the screen */
+/* Per game round result banner on top of the screen */
 
-#result-message {
+#result-banner {
     position: fixed;
     top: 7px;
     left: 50%;
@@ -327,12 +337,10 @@ body {
     width: 100%;
 }
 
-#result-message img {
+#result-banner img {
     width: 40px; /* Adjusts icon size */
     height: auto; /* Maintains aspect ratio */
 }
-
-
 
 
 #end-message {
