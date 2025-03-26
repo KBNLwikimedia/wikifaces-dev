@@ -181,7 +181,7 @@ body {
     text-shadow: 1px 1px 2px black;
     display: none; /* Initially hidden */
     pointer-events: none;
-    z-index: 1001;
+    z-index: 1200;
     /* Flex layout for centered content */
     display: flex;
     align-items: center;
@@ -279,6 +279,8 @@ body {
     cursor: default;     /* or pointer if clickable */
     transition: opacity 1.5s ease, visibility 1.5s ease;
     pointer-events: auto;
+    opacity: 0;
+    animation: fadeIn 0.75s forwards;
 }
 
 /* Ensure .description inside .overlay p is italic and smaller */
@@ -346,6 +348,39 @@ body {
     background: rgba(200, 0, 0, 0.4);
 }
 
+.make-or-break-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.6); /* semi-transparent dark overlay */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  opacity: 0;
+  animation: fadeIn 0.75s forwards;
+  pointer-events: auto;
+  outline: 0px solid white;
+}
+
+.make-or-break-text {
+  font-size: 50px;
+  color: white;
+  text-align: center;
+  text-shadow: 2px 2px 2px black;
+  font-weight: bold;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
 
 
 #end-message {
@@ -391,7 +426,7 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 14px;
-    z-index: 1000;
+    z-index: 13000;
     border: 0px solid rgba(55, 55, 255, 0.8);
 }
 #footer a {

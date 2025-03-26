@@ -1,8 +1,9 @@
 // For usage in https://jshint.com/
 /* jshint esversion: 8 */
 document.addEventListener("DOMContentLoaded", function() {
+    const DEBUG_MODE = true;
     const DATA_FILE = "data/wikifaces-datacache.csv";
-    const MAX_ROUNDS = 5; // Configurable number of rounds = number of circles in the scoreboard
+    const MAX_ROUNDS = 2; // Configurable number of rounds = number of circles in the scoreboard
     const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
 
     // === Global Timeout Configurations - in milliseconds ===
@@ -446,32 +447,46 @@ function showNameButtonsWithTimeout() {
         const overlay = document.getElementById("overlay");
         if (!overlay) return;
 
-        overlay.addEventListener("click", (event) => {
-            if (event.target.closest(".wikipedia-link")) return;
-            loadNewRound();
+        overlay.addEventListener("click", (e) => {
+          if (!e.target.closest(".wikipedia-link")) advanceToNextStep();
         });
+
 
         let touchStartY = 0;
         let touchEndY = 0;
-        overlay.addEventListener("touchstart", (event) => {
-            touchStartY = event.changedTouches[0].screenY;
+        overlay.addEventListener("touchstart", (e) => {
+            touchStartY = e.changedTouches[0].screenY;
         });
-        overlay.addEventListener("touchend", (event) => {
-            touchEndY = event.changedTouches[0].screenY;
+        overlay.addEventListener("touchend", (e) => {
+            touchEndY = e.changedTouches[0].screenY;
             if (touchStartY - touchEndY > SWIPE_THRESHOLD) {
-                loadNewRound();
+                advanceToNextStep();
             }
         });
 
         // Make sure it can receive keyboard input
         overlay.setAttribute("tabindex", "0");
         overlay.focus(); // This is important to receive keydown
-        overlay.addEventListener("keydown", (event) => {
-            if (event.code === "Space" || event.code === "Enter") {
-                loadNewRound();
+        overlay.addEventListener("keydown", (e) => {
+            if (["Space", "Enter"].includes(e.code)) {
+                advanceToNextStep();
             }
         });
     }
+
+function advanceToNextStep() {
+  const makeOrBreak = document.getElementById("make-or-break");
+
+  if (makeOrBreak) {
+    makeOrBreak.remove();
+    loadNewRound();
+  } else if (score.correct === MAX_ROUNDS - 1 && score.wrong === MAX_ROUNDS - 1) {
+    showMakeOrBreakScreen();
+  } else {
+    loadNewRound();
+  }
+}
+
 
     /**
      * Shows the overlay after Wikipedia data has loaded.
@@ -514,16 +529,14 @@ function showNameButtonsWithTimeout() {
         clearOverlay();
         /* 3 - Loading the names pair buttons */
         const namesPair = await showNameButtonsWithTimeout();
-
-        logUsedNamePairs();
         /* 4 - Loading the portrait image. This needs to happen *after* name buttons have been loaded in step 3. */
         handlePortraitLoadAndDisplay(correctPerson.image, () => {
             nameOptions.style.display = "flex";
         });
+        if (DEBUG_MODE) {logUsedNamePairs();}
     }
 
     function handleRoundResult(event) {
-
         roundPlayed = true;
         const selectedName = event.target.textContent;
         let wasCorrect = false;
@@ -545,6 +558,7 @@ function showNameButtonsWithTimeout() {
        showAndUpdateScoreBoard();
        clearNameButtons();
        showPersonOverlay(correctPerson, wasCorrect);
+
         // Deze hierdner nog chcken, wanner dee precie moet triggeren!!!
         //checkGameEnd()
     }
@@ -590,6 +604,45 @@ function showAndUpdateScoreBoard() {
         console.error("⚠️ Error updating scoreboard:", error);
     }
 }
+
+
+/**
+ * Displays a temporary "Make or Break" overlay with a dramatic message,
+ * then waits for user interaction (click, touch, or key press) to proceed.
+ * Calls the global `advanceToNextStep()` when interaction is detected.
+ */
+function showMakeOrBreakScreen() {
+    try {
+        const makeOrBreakOverlay = document.createElement("div");
+        makeOrBreakOverlay.id = "make-or-break";
+        makeOrBreakOverlay.className = "make-or-break-screen";
+
+        makeOrBreakOverlay.innerHTML = `
+            <div class="make-or-break-text">${MAX_ROUNDS - 1} - ${MAX_ROUNDS - 1}</div>
+            <div class="make-or-break-text">Make or break!</div>
+        `;
+
+        // Make the overlay focusable to detect key events
+        makeOrBreakOverlay.setAttribute("tabindex", "10");
+        document.body.appendChild(makeOrBreakOverlay);
+        makeOrBreakOverlay.focus();
+
+        // Add event listeners to proceed on interaction
+        // NOT: advanceToNextStep() with the parentheses!
+        makeOrBreakOverlay.addEventListener("click", advanceToNextStep, { once: true });
+        makeOrBreakOverlay.addEventListener("touchstart", advanceToNextStep, { once: true });
+
+        makeOrBreakOverlay.addEventListener("keydown", (e) => {
+            if (["Space", "Enter"].includes(e.code)) {
+                advanceToNextStep(); // NOT: advanceToNextStep without the parentheses!
+            }
+        }, { once: true });
+
+    } catch (error) {
+        console.error("Error showing Make or Break screen:", error);
+    }
+}
+
 
 
     // Still to worl on game and and loading the next round of games
