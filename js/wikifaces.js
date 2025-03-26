@@ -451,7 +451,6 @@ function showNameButtonsWithTimeout() {
           if (!e.target.closest(".wikipedia-link")) advanceToNextStep();
         });
 
-
         let touchStartY = 0;
         let touchEndY = 0;
         overlay.addEventListener("touchstart", (e) => {
@@ -474,18 +473,30 @@ function showNameButtonsWithTimeout() {
         });
     }
 
+/**
+ * Determines the next game step based on the current score and screen state.
+ * - If the Make or Break screen is visible, it removes it and starts a new round.
+ * - If the score is tied at MAX_ROUNDS - 1, it shows the Make or Break screen.
+ * - Otherwise, it simply proceeds to the next round.
+ */
 function advanceToNextStep() {
-  const makeOrBreak = document.getElementById("make-or-break");
+  try {
+    const makeOrBreak = document.getElementById("make-or-break");
 
-  if (makeOrBreak) {
-    makeOrBreak.remove();
-    loadNewRound();
-  } else if (score.correct === MAX_ROUNDS - 1 && score.wrong === MAX_ROUNDS - 1) {
-    showMakeOrBreakScreen();
-  } else {
-    loadNewRound();
+    if (makeOrBreak) {
+      makeOrBreak.remove();
+      loadNewRound();
+    } else if (score.correct === MAX_ROUNDS - 1 && score.wrong === MAX_ROUNDS - 1) {
+      showMakeOrBreakScreen();
+    } else {
+      loadNewRound();
+    }
+
+  } catch (error) {
+    console.error("Error advancing to next step:", error);
   }
 }
+
 
 
     /**
@@ -604,7 +615,6 @@ function showAndUpdateScoreBoard() {
         console.error("⚠️ Error updating scoreboard:", error);
     }
 }
-
 
 /**
  * Displays a temporary "Make or Break" overlay with a dramatic message,
