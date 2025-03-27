@@ -202,29 +202,14 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  display: flex;
-  flex-direction: column;      /* Stack buttons vertically */
-  justify-content: center;     /* Vertical centering */
-  align-items: center;         /* Horizontal centering */
-  gap: 5px;                   /* Space between buttons */
-  text-align: center;
-  pointer-events: auto;
-  z-index: 10;
-  border: 2px solid white;
-  backdrop-filter: blur(5px);
-}
-
-#buttons {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;      /* Stack buttons vertically */
   justify-content: center;   /* vertical centering */
   align-items: center;       /* horizontal centering */
   pointer-events: auto;
   z-index: 10;
+  outline: none;
   backdrop-filter: blur(0px);
 }
 
@@ -269,6 +254,7 @@ body {
     backdrop-filter: blur(6px);
     background: rgba(0, 0, 0, 0.5);
     text-align: left;
+    outline: none;
     z-index: 20;
     justify-content: space-between;
     border: 0px solid magenta;
@@ -363,6 +349,7 @@ body {
   opacity: 0;
   animation: fadeIn 0.75s forwards;
   pointer-events: auto;
+  outline: none;
 }
 
 .make-or-break-text {
@@ -371,6 +358,7 @@ body {
   text-align: center;
   text-shadow: 2px 2px 2px black;
   font-weight: bold;
+  outline: none;
 }
 
 /* Fade in animation */
@@ -379,6 +367,7 @@ body {
     opacity: 1;
   }
 }
+
 
 #end-message {
     position: fixed;
