@@ -745,12 +745,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
             if (selectedName === correctPerson.name) {
                 score.correct++;
-                resultBanner.innerHTML = `${happyFace} <span>Spot on! This was ${correctPerson.name}.</span>`;
+                resultBanner.innerHTML = `${happyFace} <span>Spot on! This is ${correctPerson.name}.</span>`;
                 wasCorrect = true;
             }
             else {
                 score.wrong++;
-                resultBanner.innerHTML = `${sadFace} <span>Oh, no! This was not ${incorrectPerson.name}, it was ${correctPerson.name}.</span>`;
+                resultBanner.innerHTML = `${sadFace} <span>Oh, no! This is not ${incorrectPerson.name}, it is ${correctPerson.name}.</span>`;
             }
 
             // Show result banner

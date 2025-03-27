@@ -269,7 +269,6 @@ body {
     backdrop-filter: blur(6px);
     background: rgba(0, 0, 0, 0.5);
     text-align: left;
-    outline: none;
     z-index: 20;
     justify-content: space-between;
     border: 0px solid magenta;
@@ -364,7 +363,6 @@ body {
   opacity: 0;
   animation: fadeIn 0.75s forwards;
   pointer-events: auto;
-  outline: 0px solid white;
 }
 
 .make-or-break-text {
@@ -381,7 +379,6 @@ body {
     opacity: 1;
   }
 }
-
 
 #end-message {
     position: fixed;
