@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // === Global Timeout Configurations - in milliseconds ===
     const BUTTON_SHOW_DELAY = 500; // Interval between showing the portrait and showing the name buttons
     const IMAGE_LOADING_MESSAGE_DELAY = 5000; // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
-    const IMAGE_ERROR_DISPLAY_DURATION = 10000; // How long the image loading error message is shown (ms)
+    const IMAGE_ERROR_DISPLAY_DURATION = 60000; // How long the image loading error message is shown (ms)
     const NAME_SELECTION_TIMEOUT = 1000; // 1 second, if it takes longer to select name pair, show a message
     const SWIPE_THRESHOLD = 100; // Minimum swipe distance to trigger next round
     // When the result banner is shown (✅ or ❌), this defines how long interaction is locked afterward to prevent double-pressing or skipping too quickly.
@@ -245,7 +245,7 @@ function capitalizeFirstLetter(text) {
     function showImageLoadError(duration = IMAGE_ERROR_DISPLAY_DURATION) {
         try {
             const errorMessage = document.createElement("div");
-            errorMessage.textContent = "⚠️ Failed to load image. Please try again.";
+            errorMessage.textContent = "⚠️ Sorry, the image failed to load. You might want to reload the app and try again!";
             errorMessage.className = "portrait-load-error"; // No leading dot!
 
             document.body.appendChild(errorMessage);
@@ -595,26 +595,31 @@ function capitalizeFirstLetter(text) {
      * @param {Object} person - The person to display (should have `name`, `description`, and `wikipedia` fields).
      * @param {boolean} wasCorrect - Whether the guess was correct (controls overlay styling).
      */
-    function createOverlayHTML(person, wasCorrect) {
-        try {
-            if (!person || !person.personLabel || !person.personDescription || !person.wikipediaENurl) {
-                throw new Error("Invalid person object passed to createOverlayHTML");
-            }
+function createOverlayHTML(person, wasCorrect) {
+    try {
+        if (!person || !person.personLabel || !person.wikipediaENurl) {
+            throw new Error("Invalid person object passed to createOverlayHTML");
+        }
 
-            wikiInfo.innerHTML = `
+        const description = person.personDescription && person.personDescription.trim()
+            ? `<p class="description">${person.personDescription}</p>`
+            : "";
+
+        wikiInfo.innerHTML = `
             <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-                <p class="description">${person.personDescription}</p>
+                ${description}
                 <h2>${person.personLabel}</h2>
                 <p id="wiki-extract"></p>
                 <a href="${person.wikipediaENurl}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
             </div>
         `;
-            wikiInfo.style.display = "block";
-        }
-        catch (error) {
-            console.error("Failed to create overlay HTML:", error);
-        }
+
+        wikiInfo.style.display = "block";
+    } catch (error) {
+        console.error("❌ Failed to create overlay HTML:", error);
     }
+}
+
 
     /**
      * Adds click, swipe, and keyboard listeners to the overlay element

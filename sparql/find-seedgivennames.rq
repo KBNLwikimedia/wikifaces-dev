@@ -14,9 +14,9 @@
 # Author: ChatGPT (prompted by Wikidata User:OlafJanssen) / 27 March 2025
 # ---------------------------------------------------------------------------------
 
-SELECT ?givennameLabel (STRAFTER(STR(?givenname), "http://www.wikidata.org/entity/") AS ?qid) WHERE {{
+SELECT DISTINCT ?givennameLabel (STRAFTER(STR(?givenname), "http://www.wikidata.org/entity/") AS ?qid) WHERE {{
   {{
-    SELECT ?person ?givenname WHERE {{
+    SELECT DISTINCT ?person ?givenname WHERE {{
       ?person wdt:P31 wd:Q5;
               wdt:P735 ?givenname.
       ?givenname wdt:P31 wd:Q202444.

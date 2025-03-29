@@ -13,7 +13,7 @@
 #   - {qid}: Wikidata QID of the given name (injected by Python script)
 #
 # ---------------------------------------------------------------------------------
-SELECT ?person ?personLabel ?personDescription
+SELECT DISTINCT ?person ?personLabel ?personDescription
 (SAMPLE(?imageurl3) AS ?imageurl)
 ?wikipediaENurl
 WHERE {{
