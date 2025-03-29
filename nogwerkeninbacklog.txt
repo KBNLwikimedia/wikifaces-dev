@@ -1,0 +1,3 @@
+https://forum.openrefine.org/t/accessing-reconciliation-api-via/471/2 
+
+Doel/hoop/verwachting: Om "omgekeerd" te reconcilieren, dus om bij 1 voornaam (Paul) de beschikbare naamsvarianten in WD op te sporen (Pablo, Paul met accentje op de u) etc. 

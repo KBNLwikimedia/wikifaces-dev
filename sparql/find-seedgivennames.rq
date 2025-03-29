@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------------------------
+# Query: Most Common Given Names (Wikidata Sample, excluding China)
+#
+# Description:
+#   This query finds the top {limit_results} most common given names among a sample of
+#   {sample_size} humans in Wikidata. It ensures that:
+#     - Only actual given names (instances of 'given name', Q202444) are counted
+#     - Each name appears at least {min_count} times
+#     - Humans with Chinese citizenship (wd:Q148) are excluded
+#
+# Limitations:
+#   - Still biased by Wikidata coverage (but mitigated)
+#
+# Author: ChatGPT (prompted by Wikidata User:OlafJanssen) / 27 March 2025
+# ---------------------------------------------------------------------------------
+
+SELECT ?givennameLabel (STRAFTER(STR(?givenname), "http://www.wikidata.org/entity/") AS ?qid) WHERE {{
+  {{
+    SELECT ?person ?givenname WHERE {{
+      ?person wdt:P31 wd:Q5;
+              wdt:P735 ?givenname.
+      ?givenname wdt:P31 wd:Q202444.
+      FILTER NOT EXISTS {{
+        ?person wdt:P27 wd:Q148.  # Exclude people with Chinese citizenship
+      }}
+    }}
+    LIMIT {sample_size}
+  }}
+  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "{language}". }}
+}}
+GROUP BY ?givenname ?givennameLabel
+HAVING (COUNT(?givenname) >= {min_count})
+ORDER BY DESC(?count)
+LIMIT {limit_results}

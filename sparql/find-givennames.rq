@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------------------------
+# Query: Find Humans With Given Name, One Image, and Wikipedia Link (Wikidata)
+#
+# Description:
+#   For a given name QID, this query returns humans who:
+#     - Are instances of human (Q5)
+#     - Have that given name (P735)
+#     - Have at least one image (P18), one of which is selected
+#     - Have an English Wikipedia article
+#     - Transforms the image URL to Wikimedia's "Redirect/file" format (width=1024)
+#
+# Inputs:
+#   - {qid}: Wikidata QID of the given name (injected by Python script)
+#
+# ---------------------------------------------------------------------------------
+SELECT ?person ?personLabel ?personDescription
+(SAMPLE(?imageurl3) AS ?imageurl)
+?wikipediaENurl
+WHERE {{
+  ?person wdt:P31 wd:Q5;
+          wdt:P735 wd:{qid}.
+
+  ?person wdt:P18 ?imageurl2.
+  FILTER (REGEX(STR(?imageurl2), "\\.(jpg|png|gif)$", "i"))
+
+  ?wikipediaENurl schema:about ?person;
+                  schema:isPartOf <https://en.wikipedia.org/>.
+BIND(URI(CONCAT("https://commons.wikimedia.org/wiki/Special:Redirect/file/",
+    REPLACE(REPLACE(STRAFTER(STR(?imageurl2), "FilePath/"), "%20", "_"), "%5F", "_"),
+    "?width=1024")) AS ?imageurl3)
+  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
+}}
+GROUP BY ?person ?personLabel ?personDescription ?wikipediaENurl
+LIMIT {limit}

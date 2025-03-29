@@ -36,18 +36,31 @@ document.addEventListener("DOMContentLoaded", function() {
     const nameOptions = document.getElementById("buttons");
     const wikiInfo = document.getElementById("wiki-info");
 
-    /**
-     * Capitalizes the first letter of a given text string.
-     * @param {string} text - Input string.
-     * @returns {string} Text with first letter capitalized.
-     */
-    function capitalizeFirstLetter(text) {
+/**
+ * Capitalizes the first letter of a given string.
+ * Returns the original input if it's not a string or is empty.
+ *
+ * @param {string} text - Input string.
+ * @returns {string} The input string with its first letter capitalized.
+ */
+function capitalizeFirstLetter(text) {
+    try {
+        if (typeof text !== "string" || text.length === 0) {
+            console.warn("⚠️ capitalizeFirstLetter received invalid input:", text);
+            return text;
+        }
+
         return text.charAt(0).toUpperCase() + text.slice(1);
+    } catch (error) {
+        console.error("❌ Error in capitalizeFirstLetter:", error);
+        return text;
     }
+}
+
 
     /**
      * Parses CSV text into an array of person objects.
-     * Assumes the CSV format is: namekey;image;depicts;name;description;wikipedia
+     * Assumes the CSV format is: namekey;imageurl;person;personLabel;personDescription;wikipediaENurl
      * Each line must have at least 6 semicolon-separated fields.
      * @param {string} text - CSV text content.
      * @returns {Array<Object>} Parsed entries with structured fields.
@@ -74,14 +87,13 @@ document.addEventListener("DOMContentLoaded", function() {
                         console.warn(`Skipping malformed row ${index + 2}: not enough fields`, line);
                         return null;
                     }
-
                     return {
                         namekey: parts[0],
-                        image: parts[1],
-                        depicts: parts[2],
-                        name: parts[3],
-                        description: capitalizeFirstLetter(parts[4]),
-                        wikipedia: parts[5],
+                        imageurl: parts[1],
+                        person: parts[2],
+                        personLabel: parts[3],
+                        personDescription: capitalizeFirstLetter(parts[4]),
+                        wikipediaENurl: parts[5],
                     };
                 })
                 .filter((entry) => entry !== null);
@@ -161,17 +173,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
     /**
      * Displays the loaded portrait image with a fade-in effect,
-     * then triggers a callback (usually to reveal the name buttons).
+     * then triggers a callback to reveal the name buttons, with a configurable delay.
      *
      * @param {function} callback - A function to execute after the portrait is shown.
      */
     function displayLoadedPortrait(callback, duration = BUTTON_SHOW_DELAY) {
         try {
-            if (!portraitElement || !correctPerson || !correctPerson.image) {
+            if (!portraitElement || !correctPerson || !correctPerson.imageurl) {
                 throw new Error("Missing portrait element or image data.");
             }
 
-            portraitElement.style.backgroundImage = `url(${correctPerson.image})`;
+            portraitElement.style.backgroundImage = `url(${correctPerson.imageurl})`;
             portraitElement.classList.add("fade-in");
 
             setTimeout(() => {
@@ -299,11 +311,11 @@ document.addEventListener("DOMContentLoaded", function() {
             console.log("✅ Used name pairs:");
             Array.from(usedPairs).forEach((key) => {
                 const [id1, id2] = key.split("|");
-                const person1 = portraits.find(p => p.depicts === id1);
-                const person2 = portraits.find(p => p.depicts === id2);
+                const person1 = portraits.find(p => p.person === id1);
+                const person2 = portraits.find(p => p.person === id2);
 
                 if (person1 && person2) {
-                    console.log(`- ${person1.name} (${id1}) ↔ ${person2.name} (${id2})`);
+                    console.log(`- ${person1.personLabel} (${id1}) ↔ ${person2.personLabel} (${id2})`);
                 }
                 else {
                     console.log(`- Unknown Pair: ${id1} ↔ ${id2}`);
@@ -312,6 +324,36 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         catch (error) {
             console.error("Failed to log used name pairs:", error);
+        }
+    }
+
+    /**
+     * Selects and returns two distinct, randomly chosen people from a group (array).
+     * If the group contains fewer than two people, returns [null, null].
+     *
+     * @param {Array} group - Array of people with the same (given) name.
+     * @returns {[Object|null, Object|null]} - A pair of distinct person objects, or [null, null] if not possible.
+     */
+    function getTwoDistinctPeople(group) {
+        try {
+            if (!Array.isArray(group)) {
+                console.error("Expected an array but got:", group);
+                return [null, null];
+            }
+
+            if (group.length < 2) return [null, null];
+
+            let firstIndex = Math.floor(Math.random() * group.length);
+            let secondIndex;
+            do {
+                secondIndex = Math.floor(Math.random() * group.length);
+            } while (secondIndex === firstIndex);
+
+            return [group[firstIndex], group[secondIndex]];
+        }
+        catch (error) {
+            console.error("Error selecting two distinct people:", error);
+            return [null, null];
         }
     }
 
@@ -337,7 +379,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 pair = getTwoDistinctPeople(nameGroup);
                 if (!pair[0] || !pair[1]) return [null, null];
 
-                pairKey = [pair[0].depicts, pair[1].depicts].sort().join("|");
+                pairKey = [pair[0].person, pair[1].person].sort().join("|");
                 attempts++;
             } while (usedPairs.has(pairKey) && attempts < maxAttempts);
 
@@ -356,32 +398,34 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     /**
-     * Selects and returns two distinct, randomly chosen people from a group.
-     * If the group contains fewer than two people, returns [null, null].
+     * Attempts to select a valid pair of distinct people from the dataset.
+     * Ensures that the selected pair hasn't already been used in the game.
      *
-     * @param {Array} group - Array of people with the same name.
-     * @returns {[Object|null, Object|null]} - A pair of distinct person objects, or [null, null] if not possible.
+     * @returns {Array} [correctPerson, incorrectPerson] if successful, or an empty array if none found.
      */
-    function getTwoDistinctPeople(group) {
+    function selectValidPersonPair() {
         try {
-            if (!Array.isArray(group)) {
-                console.error("Expected an array but got:", group);
-                return [null, null];
+            const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
+            let attempts = 0;
+
+            while (attempts < 100) {
+                const candidateKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
+                const group = portraits.filter(p => p.namekey === candidateKey);
+
+                if (group.length >= 2) {
+                    const [p1, p2] = selectUniquePairFrom(group);
+                    if (p1 && p2) return [p1, p2];
+                }
+
+                attempts++;
             }
 
-            if (group.length < 2) return [null, null];
-
-            let firstIndex = Math.floor(Math.random() * group.length);
-            let secondIndex;
-            do {
-                secondIndex = Math.floor(Math.random() * group.length);
-            } while (secondIndex === firstIndex);
-
-            return [group[firstIndex], group[secondIndex]];
+            console.warn("⚠️ No valid name pair found after 100 attempts.");
+            return [];
         }
         catch (error) {
-            console.error("Error selecting two distinct people:", error);
-            return [null, null];
+            console.error("❌ Error while selecting valid person pair:", error);
+            return [];
         }
     }
 
@@ -430,56 +474,42 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     /**
-     * Shows name selection buttons after selecting a valid, unused pair of people.
-     * Displays a loading notice if name selection takes longer than the specified timeout.
-     * Retries up to 100 attempts to find a unique pair from available name groups.
+     * Selects a valid pair of distinct people and renders shuffled name buttons.
+     * Displays a loading notice if selection takes longer than the specified delay.
      *
-     * @param {number} delay - Timeout duration in milliseconds before showing a loading notice.
-     * @returns {Promise<Array<string>>} Resolves with the shuffled name pair.
+     * @param {number} delay - Time in milliseconds before showing the loading message.
+     * @returns {Promise<Array<string>>} Resolves with shuffled name strings or an empty array on error.
      */
-    function showNameButtonsWithTimeout(delay = NAME_SELECTION_TIMEOUT) {
+    async function showNameButtons(delay = NAME_SELECTION_TIMEOUT) {
         return new Promise((resolve) => {
+            const timeoutId = setTimeout(showNameSelectionNotice, delay);
+
             try {
-                const timeoutId = setTimeout(showNameSelectionNotice, delay);
+                const pair = selectValidPersonPair();
 
-                const uniqueNameKeys = [...new Set(portraits.map(p => p.namekey))];
-                let selectedNameKey = null;
-                let nameGroup = [];
-                let attempts = 0;
-
-                while (attempts < 100) {
-                    const candidateKey = uniqueNameKeys[Math.floor(Math.random() * uniqueNameKeys.length)];
-                    const candidateGroup = portraits.filter(p => p.namekey === candidateKey);
-
-                    if (candidateGroup.length >= 2) {
-                        const testPair = selectUniquePairFrom(candidateGroup);
-                        if (testPair[0] && testPair[1]) {
-                            selectedNameKey = candidateKey;
-                            nameGroup = candidateGroup;
-                            [correctPerson, incorrectPerson] = testPair;
-                            break;
-                        }
-                    }
-
-                    attempts++;
+                if (!pair || pair.length !== 2) {
+                    clearTimeout(timeoutId);
+                    removeNameSelectionNotice();
+                    console.warn("⚠️ Invalid person pair selected.");
+                    return resolve([]);
                 }
+
+                [correctPerson, incorrectPerson] = pair;
+
+                const shuffled = [correctPerson.personLabel, incorrectPerson.personLabel]
+                    .sort(() => Math.random() - 0.5);
+
+                createNameButtons(shuffled);
 
                 clearTimeout(timeoutId);
                 removeNameSelectionNotice();
-
-                if (!correctPerson || !incorrectPerson) {
-                    console.warn("No valid name pair found. Retrying...");
-                    return resolve(showNameButtonsWithTimeout()); // Retry if needed
-                }
-
-                const allNames = [correctPerson.name, incorrectPerson.name].sort(() => Math.random() - 0.5);
-                createNameButtons(allNames);
-                resolve(allNames);
+                resolve(shuffled);
             }
             catch (error) {
-                console.error("Error during name button preparation:", error);
+                clearTimeout(timeoutId);
                 removeNameSelectionNotice();
-                resolve([]); // Fallback to empty list if error occurs
+                console.error("⚠️ Failed to show name buttons:", error);
+                resolve([]);
             }
         });
     }
@@ -567,16 +597,16 @@ document.addEventListener("DOMContentLoaded", function() {
      */
     function createOverlayHTML(person, wasCorrect) {
         try {
-            if (!person || !person.name || !person.description || !person.wikipedia) {
+            if (!person || !person.personLabel || !person.personDescription || !person.wikipediaENurl) {
                 throw new Error("Invalid person object passed to createOverlayHTML");
             }
 
             wikiInfo.innerHTML = `
             <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-                <p class="description">${person.description}</p>
-                <h2>${person.name}</h2>
+                <p class="description">${person.personDescription}</p>
+                <h2>${person.personLabel}</h2>
                 <p id="wiki-extract"></p>
-                <a href="${person.wikipedia}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
+                <a href="${person.wikipediaENurl}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
             </div>
         `;
             wikiInfo.style.display = "block";
@@ -678,7 +708,7 @@ document.addEventListener("DOMContentLoaded", function() {
             createOverlayHTML(person, wasCorrect);
 
             // 2. Load Wikipedia summary for the person
-            await fetchWikiExtract(person.wikipedia.split("/").pop());
+            await fetchWikiExtract(person.wikipediaENurl.split("/").pop());
 
             // 3. Delay before enabling interaction (click, swipe, keyboard)
             setTimeout(() => {
@@ -712,10 +742,10 @@ document.addEventListener("DOMContentLoaded", function() {
             clearOverlay();
 
             // 2. Load the new name buttons (ensures unique pair)
-            const namesPair = await showNameButtonsWithTimeout();
+            const namesPair = await showNameButtons();
 
             // 3. Load and display the portrait image after names are shown
-            handlePortraitLoadAndDisplay(correctPerson.image, () => {
+            handlePortraitLoadAndDisplay(correctPerson.imageurl, () => {
                 nameOptions.style.display = "flex";
             });
 
@@ -740,17 +770,17 @@ document.addEventListener("DOMContentLoaded", function() {
             const selectedName = event.target.textContent;
             let wasCorrect = false;
 
-            const happyFace = '<img src="media/green-smiley.png" alt="Happy">';
-            const sadFace = '<img src="media/red-sadface.png" alt="Sad">';
+            const happyFace = '<img src="media/green-smiley.svg" alt="Happy">';
+            const sadFace = '<img src="media/red-sadface.svg" alt="Sad">';
 
-            if (selectedName === correctPerson.name) {
+            if (selectedName === correctPerson.personLabel) {
                 score.correct++;
-                resultBanner.innerHTML = `${happyFace} <span>Spot on! This is ${correctPerson.name}.</span>`;
+                resultBanner.innerHTML = `${happyFace} <span>Spot on! This is ${correctPerson.personLabel}.</span>`;
                 wasCorrect = true;
             }
             else {
                 score.wrong++;
-                resultBanner.innerHTML = `${sadFace} <span>Oh, no! This is not ${incorrectPerson.name}, it is ${correctPerson.name}.</span>`;
+                resultBanner.innerHTML = `${sadFace} <span>Oh, no! This is not ${incorrectPerson.personLabel}, it is ${correctPerson.personLabel}.</span>`;
             }
 
             // Show result banner
