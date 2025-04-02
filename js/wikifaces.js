@@ -16,7 +16,6 @@ import {
    clearResultBanner,
    showAndUpdateScoreBoard,
    showMakeOrBreakScreen,
-   showCleanStrikeScreen,
    renderGameEndOverlay,
    attachPlayAgainButton
 } from './renderer.js';
@@ -518,11 +517,10 @@ function advanceToNextStep(maxrounds = MAX_ROUNDS) {
 
 
 function checkGameEnd(maxrounds = MAX_ROUNDS) {
+    const cleanStrike = score.correct === maxrounds && score.wrong === 0;
+    const bonusText = cleanStrike ? "✨ BONUS POINTS: CLEAN STRIKE!!" : null;
     if (score.correct >= maxrounds) {
-        renderGameEndOverlay(true); // User won
-        if (score.wrong === 0) {
-            showCleanStrikeScreen(maxrounds, advanceToNextStep); // Only if perfect score
-        }
+        renderGameEndOverlay(true, bonusText); // User won in clean strike
         attachPlayAgainButton(document.getElementById("game-end-overlay"), resetGame, loadNewRound);
     } else if (score.wrong >= maxrounds) {
         renderGameEndOverlay(false); // User lost

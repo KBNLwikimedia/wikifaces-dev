@@ -332,7 +332,7 @@ body {
     background: rgba(200, 0, 0, 0.4);
 }
 
-.make-or-break-screen, .clean-strike-screen {
+.make-or-break-screen {
   position: fixed;
   top: 0;
   left: 0;
@@ -351,12 +351,7 @@ body {
   outline: none;
 }
 
-img.clean-strike-screen{
-  width: 50px;
-  height: 50px;
-}
-
-.make-or-break-text, .clean-strike-text {
+.make-or-break-text {
   font-size: 50px;
   color: white;
   text-align: center;

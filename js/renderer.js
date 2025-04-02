@@ -3,8 +3,6 @@
  * for overlays, banners, and notices in the game.
  */
 
-const happyFace = '<img src="media/green-smiley.svg" alt="Happy">';
-const sadFace = '<img src="media/red-sadface.svg" alt="Sad">';
 
 /**
  * Capitalizes the first letter of a given string.
@@ -369,80 +367,42 @@ export function showAndUpdateScoreBoard(score, maxRounds) {
         }
     }
 
-    /**
- * Displays a "Clean Strike" overlay when the user gets all answers correct.
- * Waits for user interaction (click, touch, or key press) to proceed.
- * Calls the global `advanceToNextStep()` when interaction is detected.
- */
-export function showCleanStrikeScreen(maxrounds,proceedCallback) {
-    try {
-        const cleanStrikeOverlay = document.createElement("div");
-
-        cleanStrikeOverlay.id = "clean-strike";
-        cleanStrikeOverlay.className = "clean-strike-screen";
-        cleanStrikeOverlay.innerHTML = `
-            <div class="clean-strike-text">${happyFace}</div>
-            <div class="clean-strike-text">${maxrounds} - 0 </div>
-            <div class="clean-strike-text">💥 Clean Strike!</div>
-        `;
-
-        cleanStrikeOverlay.setAttribute("tabindex", "10");
-        document.body.appendChild(cleanStrikeOverlay);
-        cleanStrikeOverlay.focus();
-
-        // Proceed to next step on interaction
-        cleanStrikeOverlay.addEventListener("click", proceedCallback, { once: true });
-        cleanStrikeOverlay.addEventListener("touchstart", proceedCallback, { once: true });
-        cleanStrikeOverlay.addEventListener("keydown", (e) => {
-            if (["Space", "Enter"].includes(e.code)) {
-                proceedCallback();
-            }
-        }, { once: true });
-
-    } catch (error) {
-        console.error("Error showing Clean Strike screen:", error);
-    }
-}
-
-
-/**
+ /**
  * Creates and shows the end-of-game overlay with result message and GIF.
  * Disables interaction with the underlying round overlay.
  *
  * @param {boolean} won - Whether the user won or lost.
  */
-export function renderGameEndOverlay(won) {
+export function renderGameEndOverlay(won, bonusMessage = null) {
     try {
         const overlay = document.createElement("div");
         overlay.id = "game-end-overlay";
         overlay.className = "game-end-overlay";
 
-        const message = won ? `Yessss! You won the game!` : `Bummer! You lost the game!`;
-        const gifURL = won
-            ? "https://i.pinimg.com/originals/ee/42/d9/ee42d91ece376e6847f6941b72269c76.gif"
-            : "https://i.pinimg.com/originals/0e/46/23/0e4623557c805b3462daed47c2c0d4b6.gif";
-
+        const message = won ? `Yessss! You won!` : `Bummerrr! You lost!`;
         overlay.innerHTML = `
             <div class="game-end-message">${message}</div>
-            <img src="${gifURL}" alt="${won ? "Victory" : "Defeat"}">
+            ${bonusMessage ? `<div class="game-end-bonus">${bonusMessage}</div>` : ""}
+            <img src="${won
+                ? "https://i.pinimg.com/originals/ee/42/d9/ee42d91ece376e6847f6941b72269c76.gif"
+                : "https://i.pinimg.com/originals/0e/46/23/0e4623557c805b3462daed47c2c0d4b6.gif"
+            }" alt="${won ? "Victory" : "Defeat"}">
         `;
 
         document.body.appendChild(overlay);
 
-        // 🔒 Disable interaction with the underlying overlay
-        const baseOverlay = document.getElementById("overlay");
-        if (baseOverlay) {
-            baseOverlay.style.pointerEvents = "none";
-            baseOverlay.setAttribute("tabindex", "-1");
+        // Disable underlying overlay interaction
+        const underlyingOverlay = document.getElementById("overlay");
+        if (underlyingOverlay) {
+            underlyingOverlay.style.pointerEvents = "none";
+            underlyingOverlay.setAttribute("tabindex", "-1");
         }
-
-        // Show Play Again button
-         // attachPlayAgainButton(overlay);
 
     } catch (error) {
         console.error("Error showing game end overlay:", error);
     }
 }
+
 
 /**
  * Appends a "Play Again" button to the end-of-game overlay.
