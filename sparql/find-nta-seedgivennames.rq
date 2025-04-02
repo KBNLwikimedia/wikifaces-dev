@@ -1,0 +1,41 @@
+# This SPARQL query retrieves given names from Wikidata that are used by at least 5 people (with NTA identifiers),
+# and returns the following for each name:
+# - The Wikidata entity ID (QID) of the given name
+# - The label (human-readable name) of the given name
+# - A count of how many people share that given name
+# - A list of person URIs (Wikidata entities) who have that given name
+# - A list of their labels (names)
+# - A list of all NTA identifiers associated with those people
+#
+# The data is filtered to only include given names that are instances of the class "given name" (wd:Q202444).
+# The subquery retrieves up to 600,000 distinct person–name–NTA combinations to reduce load.
+#---------------------------------------------------
+SELECT DISTINCT
+  ?givenname                                               # The Wikidata URI of the given name
+  (STRAFTER(STR(?givenname), "http://www.wikidata.org/entity/") AS ?givennameQid)  # Extract QID from URI
+  ?givennameLabel                                          # The human-readable label of the given name
+  (COUNT(?givenname) AS ?count)                            # Count of how many people share this given name
+  (GROUP_CONCAT(DISTINCT ?person; SEPARATOR = " -- ") AS ?personList)             # List of person URIs
+  (GROUP_CONCAT(DISTINCT ?personLabel; SEPARATOR = " -- ") AS ?personLabelList)   # List of person labels
+  (GROUP_CONCAT(DISTINCT ?nta; SEPARATOR = " -- ") AS ?ntaList)                   # List of NTA identifiers
+
+WHERE {
+  {
+    SELECT DISTINCT ?person ?givenname ?nta WHERE {
+      ?person wdt:P1006 ?nta;             # Person has an NTA identifier
+              wdt:P735 ?givenname.        # Person has a given name
+      ?givenname wdt:P31 wd:Q202444.      # Given name is an instance of "given name"
+    }
+    LIMIT 600000                          # Limit inner query for performance
+  }
+
+  # Fetch labels in English and make them available as ?personLabel and ?givennameLabel
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en".
+    ?person rdfs:label ?personLabel.
+    ?givenname rdfs:label ?givennameLabel.
+  }
+}
+GROUP BY ?givenname ?givennameLabel
+HAVING (COUNT(?givenname) >= 5)  # Only include names used by 5 or more people
+ORDER BY DESC(?count)             # Sort results by most common given names

@@ -15,7 +15,7 @@ import requests
 import time
 
 # --- Configuration ---
-query_file = "sparql/find-seedgivennames.rq"
+query_template = "sparql/find-seedgivennames-template.rq"
 output_file = "data/wikifaces-seedgivennames.csv"
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 
@@ -78,9 +78,9 @@ def parse_results(json_data):
 
 def main():
     try:
-        print(f"[INFO] Loading SPARQL query from '{query_file}'...")
+        print(f"[INFO] Loading SPARQL query from '{query_template}'...")
         query = load_query(
-            query_file,
+            query_template,
             sample_size=sample_size,
             limit_results=limit_results,
             min_count=min_count,

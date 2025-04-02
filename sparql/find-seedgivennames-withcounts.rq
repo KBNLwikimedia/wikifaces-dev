@@ -1,0 +1,42 @@
+# This SPARQL query retrieves a list of given names used by at least 10 people in Wikidata,
+# where each person is an instance of "human" (wd:Q5), and the given name is an instance of "given name" (wd:Q202444).
+#
+# For each qualifying given name, the query returns:
+# - The Wikidata URI of the given name
+# - The extracted QID (e.g. Q1234) of the given name
+# - The label of the given name (human-readable name)
+# - The number of people who share this given name
+# - A concatenated list of Wikidata person URIs who have this name
+# - A concatenated list of their corresponding human-readable labels
+#
+# The subquery limits to 3,000 unique person–given name pairs to maintain performance.
+#----------------------------------------------------------------------------------------
+
+SELECT DISTINCT
+  ?givenname                                               # The Wikidata URI of the given name
+  (STRAFTER(STR(?givenname), "http://www.wikidata.org/entity/") AS ?givennameQid)  # Extract QID from URI
+  ?givennameLabel                                          # The human-readable label of the given name
+  (COUNT(?givenname) AS ?count)                            # Count of how many people share this given name
+  (GROUP_CONCAT(DISTINCT ?person; SEPARATOR = " -- ") AS ?personList)             # List of person URIs
+  (GROUP_CONCAT(DISTINCT ?personLabel; SEPARATOR = " -- ") AS ?personLabelList)   # List of person labels
+
+WHERE {
+  {
+    SELECT DISTINCT ?person ?givenname WHERE {
+      ?person wdt:P31 wd:Q5;             # Person is an instance of "human"
+              wdt:P735 ?givenname.       # Person has a given name
+      ?givenname wdt:P31 wd:Q202444.     # Given name is an instance of "given name"
+    }
+    LIMIT 3000                           # Limit for performance
+  }
+
+  # Fetch labels in English and bind them to ?personLabel and ?givennameLabel
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en".
+    ?person rdfs:label ?personLabel.
+    ?givenname rdfs:label ?givennameLabel.
+  }
+}
+GROUP BY ?givenname ?givennameLabel
+HAVING (COUNT(?givenname) >= 10)  # Filter to names used by 10 or more people
+ORDER BY DESC(?count)             # Sort by popularity

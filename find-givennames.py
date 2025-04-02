@@ -27,7 +27,7 @@ import sys
 
 # ------------------ Configuration ------------------
 input_file = "data/wikifaces-seedgivennames.csv"
-query_file = "sparql/find-givennames.rq"
+query_template = "sparql/find-givennames-template.rq"
 output_file = "data/wikifaces-datacache.csv"
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 
@@ -103,7 +103,7 @@ def main():
     """
     try:
         print("[INFO] Loading SPARQL query template...")
-        query_template = load_query_template(query_file)
+        query_template = load_query_template(query_template)
 
         print("[INFO] Reading input CSV...")
         df = pd.read_csv(input_file, sep=";")

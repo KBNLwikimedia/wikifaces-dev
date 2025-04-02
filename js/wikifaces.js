@@ -1,11 +1,31 @@
 // For usage in https://jshint.com/
 /* jshint esversion: 8 */
+
+import {
+   capitalizeFirstLetter,
+   showImageLoadingNotice,
+   clearImageLoadingNotice,
+   showImageLoadError,
+   showNameSelectionNotice,
+   clearNameSelectionNotice,
+   createNameButtons,
+   clearNameButtons,
+   fetchWikiExtract,
+   createOverlayHTML,
+   clearOverlay,
+   clearResultBanner,
+   showAndUpdateScoreBoard,
+   showMakeOrBreakScreen,
+   showCleanStrikeScreen,
+   renderGameEndOverlay,
+   attachPlayAgainButton
+} from './renderer.js';
+
 document.addEventListener("DOMContentLoaded", function() {
     const DEBUG_MODE = true;
     const DATA_FILE = "data/wikifaces-datacache.csv";
-    const MAX_ROUNDS = 5; // Configurable number of rounds = number of circles in the scoreboard
+    const MAX_ROUNDS = 2; // Configurable number of rounds = number of circles in the scoreboard
     const MAX_CHARACTERS = 250; // Maximum characters to show in Wikipedia extract, fetched from API
-
     // === Global Timeout Configurations - in milliseconds ===
     const BUTTON_SHOW_DELAY = 500; // Interval between showing the portrait and showing the name buttons
     const IMAGE_LOADING_MESSAGE_DELAY = 5000; // Max wait time before "loadingNotice.textContent = "⏳ Hold on, image still loading...";" is shown
@@ -36,73 +56,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const nameOptions = document.getElementById("buttons");
     const wikiInfo = document.getElementById("wiki-info");
 
-/**
- * Capitalizes the first letter of a given string.
- * Returns the original input if it's not a string or is empty.
- *
- * @param {string} text - Input string.
- * @returns {string} The input string with its first letter capitalized.
- */
-function capitalizeFirstLetter(text) {
-    try {
-        if (typeof text !== "string" || text.length === 0) {
-            console.warn("⚠️ capitalizeFirstLetter received invalid input:", text);
-            return text;
-        }
-
-        return text.charAt(0).toUpperCase() + text.slice(1);
-    } catch (error) {
-        console.error("❌ Error in capitalizeFirstLetter:", error);
-        return text;
-    }
-}
 
 
-    /**
-     * Parses CSV text into an array of person objects.
-     * Assumes the CSV format is: namekey;imageurl;person;personLabel;personDescription;wikipediaENurl
-     * Each line must have at least 6 semicolon-separated fields.
-     * @param {string} text - CSV text content.
-     * @returns {Array<Object>} Parsed entries with structured fields.
-     */
-    function parseCSV(text) {
-        try {
-            if (!text || typeof text !== "string") {
-                console.warn("Invalid or empty CSV text input.");
-                return [];
-            }
 
-            const lines = text.trim().split("\n");
-            if (lines.length < 2) {
-                console.warn("CSV appears to contain no data rows.");
-                return [];
-            }
 
-            return lines
-                .slice(1) // Skip header
-                .map((line, index) => {
-                    const parts = line.split(";").map((part) => part.trim());
-
-                    if (parts.length < 6) {
-                        console.warn(`Skipping malformed row ${index + 2}: not enough fields`, line);
-                        return null;
-                    }
-                    return {
-                        namekey: parts[0],
-                        imageurl: parts[1],
-                        person: parts[2],
-                        personLabel: parts[3],
-                        personDescription: capitalizeFirstLetter(parts[4]),
-                        wikipediaENurl: parts[5],
-                    };
-                })
-                .filter((entry) => entry !== null);
-        }
-        catch (error) {
-            console.error("Error parsing CSV:", error);
-            return [];
-        }
-    }
 
     //******** Image loading stuff starts here
 
@@ -153,7 +110,7 @@ function capitalizeFirstLetter(text) {
 
             img.onload = () => {
                 clearTimeout(timeout);
-                removeImageLoadingNotice();
+                clearImageLoadingNotice();
                 if (typeof onLoad === "function") {
                     onLoad();
                 }
@@ -196,104 +153,6 @@ function capitalizeFirstLetter(text) {
         catch (error) {
             console.error("Failed to display portrait:", error);
             showImageLoadError(); // Optional fallback error display
-        }
-    }
-
-    /**
-     * Displays a visual notice informing the user that the portrait image is still loading.
-     * Intended to appear after a loading delay to reassure users during slower connections.
-     */
-    function showImageLoadingNotice() {
-        try {
-            // Avoid showing duplicate notices
-            if (document.getElementById("portrait-loading-notice")) return;
-
-            const loadingNotice = document.createElement("div");
-            loadingNotice.id = "portrait-loading-notice";
-            loadingNotice.className = "portrait-loading-notice";
-            loadingNotice.textContent = "⏳ Hold on, image still loading...";
-
-            document.body.appendChild(loadingNotice);
-        }
-        catch (error) {
-            console.error("Failed to show image loading notice:", error);
-        }
-    }
-
-    /**
-     * Removes the visual notice that was shown during image loading.
-     * Ensures the message is dismissed once the image is successfully loaded or fails.
-     */
-    function removeImageLoadingNotice() {
-        try {
-            const notice = document.getElementById("portrait-loading-notice");
-            if (notice && notice.parentElement) {
-                notice.parentElement.removeChild(notice);
-            }
-        }
-        catch (error) {
-            console.error("Failed to remove image loading notice:", error);
-        }
-    }
-
-    /**
-     * Displays an error message on the screen if an image fails to load.
-     * The message is temporary and automatically removed after a delay.
-     *
-     * @param {number} duration - How long the error message remains visible (in ms).
-     */
-    function showImageLoadError(duration = IMAGE_ERROR_DISPLAY_DURATION) {
-        try {
-            const errorMessage = document.createElement("div");
-            errorMessage.textContent = "⚠️ Sorry, the image failed to load. You might want to reload the app and try again!";
-            errorMessage.className = "portrait-load-error"; // No leading dot!
-
-            document.body.appendChild(errorMessage);
-
-            setTimeout(() => {
-                if (errorMessage.parentElement) {
-                    errorMessage.parentElement.removeChild(errorMessage);
-                }
-            }, duration);
-        }
-        catch (error) {
-            console.error("Failed to display or remove image load error message:", error);
-        }
-    }
-
-    //******** Image loading stuff ends here
-
-    // ==== Start of button related stuff
-
-    /**
-     * Displays a temporary on-screen notice while selecting two random people.
-     * Typically used when the name selection process takes longer than expected.
-     */
-    function showNameSelectionNotice() {
-        try {
-            const notice = document.createElement("div");
-            notice.id = "name-selection-notice";
-            notice.className = "name-selection-notice";
-            notice.textContent = "⏳ Please wait, selecting two random persons...";
-            document.body.appendChild(notice);
-        }
-        catch (error) {
-            console.error("Failed to show name selection notice:", error);
-        }
-    }
-
-    /**
-     * Removes the name selection notice from the DOM, if it exists.
-     */
-    function removeNameSelectionNotice() {
-        try {
-            const notice = document.getElementById("name-selection-notice");
-            if (notice && notice.parentElement) {
-                notice.parentElement.removeChild(notice);
-            }
-        }
-        catch (error) {
-            console.error("Failed to remove name selection notice:", error);
         }
     }
 
@@ -429,49 +288,7 @@ function capitalizeFirstLetter(text) {
         }
     }
 
-    /**
-     * Creates and displays name selection buttons inside the pre-defined .button-wrapper container.
-     * Adds click listeners to each button and includes an "OR" divider between two names.
-     *
-     * @param {Array} namesPair - An array containing exactly two names to be displayed.
-     */
-    function createNameButtons(namesPair) {
-        try {
 
-            if (!Array.isArray(namesPair) || namesPair.length !== 2) {
-                console.error("createNameButtons expects exactly 2 names:", namesPair);
-                return;
-            }
-
-            clearNameButtons(); // Clear existing buttons
-
-            // First button
-            const firstButton = document.createElement("name-button");
-            firstButton.textContent = namesPair[0];
-            firstButton.classList.add("name-button");
-            firstButton.disabled = false;
-            firstButton.addEventListener("click", handleRoundResult);
-            nameOptions.appendChild(firstButton);
-
-            // "OR" divider
-            const orDivider = document.createElement("div");
-            orDivider.textContent = "OR";
-            orDivider.classList.add("or-divider");
-            nameOptions.appendChild(orDivider);
-
-            // Second button
-            const secondButton = document.createElement("name-button");
-            secondButton.textContent = namesPair[1];
-            secondButton.classList.add("name-button");
-            secondButton.disabled = false;
-            secondButton.addEventListener("click", handleRoundResult);
-            nameOptions.appendChild(secondButton);
-
-        }
-        catch (error) {
-            console.error("Failed to create name buttons:", error);
-        }
-    }
 
     /**
      * Selects a valid pair of distinct people and renders shuffled name buttons.
@@ -489,7 +306,7 @@ function capitalizeFirstLetter(text) {
 
                 if (!pair || pair.length !== 2) {
                     clearTimeout(timeoutId);
-                    removeNameSelectionNotice();
+                    clearNameSelectionNotice();
                     console.warn("⚠️ Invalid person pair selected.");
                     return resolve([]);
                 }
@@ -499,127 +316,20 @@ function capitalizeFirstLetter(text) {
                 const shuffled = [correctPerson.personLabel, incorrectPerson.personLabel]
                     .sort(() => Math.random() - 0.5);
 
-                createNameButtons(shuffled);
+                createNameButtons(shuffled, handleRoundResult);
 
                 clearTimeout(timeoutId);
-                removeNameSelectionNotice();
+                clearNameSelectionNotice();
                 resolve(shuffled);
             }
             catch (error) {
                 clearTimeout(timeoutId);
-                removeNameSelectionNotice();
+                clearNameSelectionNotice();
                 console.error("⚠️ Failed to show name buttons:", error);
                 resolve([]);
             }
         });
     }
-
-    /**
-     * Hides and clears the name buttons area.
-     * Ensures no lingering content or active display remains.
-     */
-    function clearNameButtons() {
-        try {
-            nameOptions.innerHTML = "";
-            nameOptions.style.display = "none";
-        }
-        catch (error) {
-            console.error("Failed to clear name buttons:", error);
-        }
-    }
-
-    /**
-     * Hides and clears the overlay (Wikipedia information area).
-     * Used before rendering a new overlay or when exiting a round.
-     */
-    function clearOverlay() {
-        try {
-            wikiInfo.innerHTML = "";
-            wikiInfo.style.display = "none";
-        }
-        catch (error) {
-            console.error("Failed to clear overlay:", error);
-        }
-    }
-
-    /**
-     * Hides and clears the result banner (correct/wrong feedback).
-     * Used before starting the next round.
-     */
-    function clearResultBanner() {
-        try {
-            resultBanner.innerHTML = "";
-            resultBanner.style.display = "none";
-        }
-        catch (error) {
-            console.error("Failed to clear result banner:", error);
-        }
-    }
-
-    /**
-     * Fetches the Wikipedia summary and updates the overlay extract area.
-     * @param {string} wikiTitle - The Wikipedia article title.
-     * @returns {Promise<void>}
-     */
-    function fetchWikiExtract(wikiTitle) {
-        const extractElement = document.getElementById("wiki-extract");
-        if (extractElement) {
-            extractElement.classList.remove("loaded");
-            extractElement.textContent = "Loading Wikipedia summary...";
-        }
-
-        return fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`)
-            .then(response => response.json())
-            .then(data => {
-                let extract = data.extract || "Sorry, there is no intro available from Wikipedia.";
-
-                if (extract.length > MAX_CHARACTERS) {
-                    extract = extract.substring(0, MAX_CHARACTERS) + "...";
-                }
-
-                if (extractElement) {
-                    extractElement.textContent = extract;
-                    extractElement.classList.add("loaded");
-                }
-            })
-            .catch(error => {
-                if (extractElement) {
-                    extractElement.textContent = "Sorry, I could not load intro from Wikipedia.";
-                }
-            });
-    }
-
-    /**
-     * Constructs and displays the overlay containing person details and a placeholder for the Wikipedia summary.
-     *
-     * @param {Object} person - The person to display (should have `name`, `description`, and `wikipedia` fields).
-     * @param {boolean} wasCorrect - Whether the guess was correct (controls overlay styling).
-     */
-function createOverlayHTML(person, wasCorrect) {
-    try {
-        if (!person || !person.personLabel || !person.wikipediaENurl) {
-            throw new Error("Invalid person object passed to createOverlayHTML");
-        }
-
-        const description = person.personDescription && person.personDescription.trim()
-            ? `<p class="description">${person.personDescription}</p>`
-            : "";
-
-        wikiInfo.innerHTML = `
-            <div class="overlay ${wasCorrect ? 'overlay-correct' : 'overlay-wrong'}" id="overlay">
-                ${description}
-                <h2>${person.personLabel}</h2>
-                <p id="wiki-extract"></p>
-                <a href="${person.wikipediaENurl}" target="_blank" class="wikipedia-link">Read more on Wikipedia &rarr;</a>
-            </div>
-        `;
-
-        wikiInfo.style.display = "block";
-    } catch (error) {
-        console.error("❌ Failed to create overlay HTML:", error);
-    }
-}
-
 
     /**
      * Adds click, swipe, and keyboard listeners to the overlay element
@@ -672,32 +382,35 @@ function createOverlayHTML(person, wasCorrect) {
         }
     }
 
-    /**
-     * Determines the next game step based on the current score and screen state.
-     * - If the Make or Break screen is visible, it removes it and starts a new round.
-     * - If the score is tied at MAX_ROUNDS - 1, it shows the Make or Break screen.
-     * - Otherwise, it simply proceeds to the next round.
-     */
-    function advanceToNextStep(maxrounds = MAX_ROUNDS) {
-        try {
-            const makeOrBreak = document.getElementById("make-or-break");
+function advanceToNextStep(maxrounds = MAX_ROUNDS) {
+    try {
+        const makeOrBreak = document.getElementById("make-or-break");
+        const cleanStrike = document.getElementById("clean-strike");
+        const gameEndOverlay = document.getElementById("game-end-overlay");
 
-            if (makeOrBreak) {
-                makeOrBreak.remove();
-                loadNewRound();
-            }
-            else if (score.correct === maxrounds - 1 && score.wrong === maxrounds - 1) {
-                showMakeOrBreakScreen();
-            }
-            else {
-                loadNewRound();
-            }
-
+        if (makeOrBreak) {
+            makeOrBreak.remove();
+            loadNewRound();
+        } else if (cleanStrike) {
+            cleanStrike.remove();
+            loadNewRound();
+        } else if (gameEndOverlay) {
+            // Clicking spacebar or tapping removes end overlay and resets game
+            gameEndOverlay.remove();
+            resetGame();
+            loadNewRound();
+        } else if (score.correct >= maxrounds || score.wrong >= maxrounds) {
+            checkGameEnd(maxrounds);
+        } else if (score.correct === maxrounds - 1 && score.wrong === maxrounds - 1) {
+            showMakeOrBreakScreen(maxrounds, advanceToNextStep);
+        } else {
+            loadNewRound();
         }
-        catch (error) {
-            console.error("Error advancing to next step:", error);
-        }
+    } catch (error) {
+        console.error("Error advancing to next step:", error);
     }
+}
+
 
     /**
      * Displays the person overlay after loading Wikipedia data,
@@ -713,7 +426,7 @@ function createOverlayHTML(person, wasCorrect) {
             createOverlayHTML(person, wasCorrect);
 
             // 2. Load Wikipedia summary for the person
-            await fetchWikiExtract(person.wikipediaENurl.split("/").pop());
+            await fetchWikiExtract(person.wikipediaENurl.split("/").pop(), MAX_CHARACTERS);
 
             // 3. Delay before enabling interaction (click, swipe, keyboard)
             setTimeout(() => {
@@ -725,8 +438,6 @@ function createOverlayHTML(person, wasCorrect) {
             console.error("Error showing person overlay:", error);
         }
     }
-
-    //=================END Overlay related stuff
 
     // ===== New game round functions
     /**
@@ -790,14 +501,14 @@ function createOverlayHTML(person, wasCorrect) {
 
             // Show result banner
             resultBanner.style.display = "flex";
-            showAndUpdateScoreBoard();
+            showAndUpdateScoreBoard(score, MAX_ROUNDS);
             clearNameButtons();
 
             // Show overlay with Wikipedia info and next-step interactions
             showPersonOverlay(correctPerson, wasCorrect);
 
-            // Optional: add checkGameEnd() here later if you want to conditionally end the game
-            // checkGameEnd();
+            // ✅ Check if the game has ended (after all rounds played)
+            checkGameEnd(MAX_ROUNDS);
 
         }
         catch (error) {
@@ -805,171 +516,33 @@ function createOverlayHTML(person, wasCorrect) {
         }
     }
 
-    /**
-     * Visually updates the scoreboard UI with current correct and wrong answer counts.
-     * - Each row shows a numeric label followed by a series of progress circles.
-     * - Green = correct answers, Red = incorrect answers.
-     * - Filled circles indicate how many have been achieved.
-     *
-     * @param {number} maxRounds - The total number of rounds in the game (default is MAX_ROUNDS).
-     */
-    function showAndUpdateScoreBoard(maxRounds = MAX_ROUNDS) {
-        try {
-            scoreBoard.innerHTML = "";
 
-            const categories = [{
-                    count: score.correct,
-                    baseColor: "light-green",
-                    fillColor: "dark-green"
-                },
-                {
-                    count: score.wrong,
-                    baseColor: "light-red",
-                    fillColor: "dark-red"
-                }
-            ];
-
-            categories.forEach(({
-                count,
-                baseColor,
-                fillColor
-            }) => {
-                const row = document.createElement("div");
-                row.classList.add("score-row");
-
-                const countLabel = document.createElement("span");
-                countLabel.textContent = `${count}`;
-                countLabel.classList.add("score-label");
-                row.appendChild(countLabel);
-
-                for (let i = 0; i < maxRounds; i++) {
-                    const circle = document.createElement("div");
-                    circle.classList.add("score-circle", baseColor);
-                    if (i < count) {
-                        circle.classList.add(fillColor);
-                    }
-                    row.appendChild(circle);
-                }
-
-                scoreBoard.appendChild(row);
-            });
-
+function checkGameEnd(maxrounds = MAX_ROUNDS) {
+    if (score.correct >= maxrounds) {
+        renderGameEndOverlay(true); // User won
+        if (score.wrong === 0) {
+            showCleanStrikeScreen(maxrounds, advanceToNextStep); // Only if perfect score
         }
-        catch (error) {
-            console.error("⚠️ Error updating scoreboard:", error);
-        }
+        attachPlayAgainButton(document.getElementById("game-end-overlay"), resetGame, loadNewRound);
+    } else if (score.wrong >= maxrounds) {
+        renderGameEndOverlay(false); // User lost
+        attachPlayAgainButton(document.getElementById("game-end-overlay"), resetGame, loadNewRound);
     }
+}
 
-    /**
-     * Displays a temporary "Make or Break" overlay with a dramatic message,
-     * then waits for user interaction (click, touch, or key press) to proceed.
-     * Calls the global `advanceToNextStep()` when interaction is detected.
-     */
-    function showMakeOrBreakScreen(maxrounds = MAX_ROUNDS) {
-        try {
-            const makeOrBreakOverlay = document.createElement("div");
-            makeOrBreakOverlay.id = "make-or-break";
-            makeOrBreakOverlay.className = "make-or-break-screen";
 
-            makeOrBreakOverlay.innerHTML = `
-            <div class="make-or-break-text">${maxrounds - 1} - ${maxrounds - 1}</div>
-            <div class="make-or-break-text">Make or break!</div>
-        `;
 
-            // Make the overlay focusable to detect key events
-            makeOrBreakOverlay.setAttribute("tabindex", "10");
-            document.body.appendChild(makeOrBreakOverlay);
-            makeOrBreakOverlay.focus();
+function resetGame() {
+    score.correct = 0;
+    score.wrong = 0;
+    usedPairs = new Set();
+    showAndUpdateScoreBoard(score, MAX_ROUNDS);
+    clearOverlay();
+    clearResultBanner();
+    clearNameButtons();
+    portraitElement.style.backgroundImage = "none";
+}
 
-            // Add event listeners to proceed on interaction
-            // NOT: advanceToNextStep() with the parentheses!
-            makeOrBreakOverlay.addEventListener("click", advanceToNextStep, {
-                once: true
-            });
-            makeOrBreakOverlay.addEventListener("touchstart", advanceToNextStep, {
-                once: true
-            });
-
-            makeOrBreakOverlay.addEventListener("keydown", (e) => {
-                if (["Space", "Enter"].includes(e.code)) {
-                    advanceToNextStep(); // NOT: advanceToNextStep without the parentheses!
-                }
-            }, {
-                once: true
-            });
-
-        }
-        catch (error) {
-            console.error("Error showing Make or Break screen:", error);
-        }
-    }
-
-    // Still to worl on game and and loading the next round of games
-    function checkGameEnd(maxrounds = MAX_ROUNDS) {
-        let gifURL = "";
-        let messageText = "";
-        if (score.correct >= maxrounds) {
-            gifURL = "https://i.pinimg.com/originals/ee/42/d9/ee42d91ece376e6847f6941b72269c76.gif";
-            messageText = "🎉 You won the game! 🎉";
-        }
-        else if (score.wrong >= maxrounds) {
-            gifURL = "https://i.pinimg.com/originals/0e/46/23/0e4623557c805b3462daed47c2c0d4b6.gif";
-            messageText = "😢 You lost the game! Try again.";
-        }
-
-        if (gifURL) {
-            setTimeout(() => {
-                const endMessage = document.createElement("div");
-                endMessage.id = "end-message";
-
-                const countdownElement = document.createElement("div");
-                countdownElement.className = "countdown-text";
-                let countdown = GAME_END_COUNTDOWN_START;
-                countdownElement.textContent = `New game will start in ${countdown} seconds`;
-
-                const interval = setInterval(() => {
-                    countdown--;
-                    if (countdown <= 0) {
-                        clearInterval(interval);
-                        document.body.removeChild(endMessage);
-                        document.body.style.pointerEvents = "auto";
-                        resetGame();
-                        //loadNewRound();
-                        wikiInfo.innerHTML = "";
-                        wikiInfo.style.display = "none";
-                    }
-                    else {
-                        countdownElement.textContent = `New game will start in ${countdown} seconds`;
-                    }
-                }, GAME_END_INTERVAL_DELAY); // 🔄 use global constant here
-
-                endMessage.innerHTML = `
-                    <div class="end-text">${messageText}</div>
-                    <img src="${gifURL}" alt="Game Over">
-                `;
-                endMessage.appendChild(countdownElement);
-
-                // Disable interaction with everything else
-                document.body.style.pointerEvents = "none";
-                endMessage.style.pointerEvents = "none";
-
-                // Also disable interaction with the final overlay
-                const overlay = document.querySelector(".overlay");
-                if (overlay) {
-                    overlay.style.pointerEvents = "none";
-                    overlay.style.touchAction = "none";
-                }
-
-                document.body.appendChild(endMessage);
-            }, GAME_END_DISPLAY_DELAY); // Delay before showing end screen
-        }
-    }
-
-    function resetGame() {
-        score.correct = 0;
-        score.wrong = 0;
-        showAndUpdateScoreBoard();
-    }
 
     /**
      * Asynchronously fetches the CSV data for portraits,
@@ -980,11 +553,58 @@ function createOverlayHTML(person, wasCorrect) {
             const response = await fetch(datafile);
             const text = await response.text();
             portraits = parseCSV(text);
-            showAndUpdateScoreBoard();
+            showAndUpdateScoreBoard(score, MAX_ROUNDS);
             loadNewRound();
         }
         catch (error) {
             console.error("Error fetching portraits:", error);
+        }
+    }
+
+
+  /**
+     * Parses CSV text into an array of person objects.
+     * Assumes the CSV format is: namekey;imageurl;person;personLabel;personDescription;wikipediaENurl
+     * Each line must have at least 6 semicolon-separated fields.
+     * @param {string} text - CSV text content.
+     * @returns {Array<Object>} Parsed entries with structured fields.
+     */
+    function parseCSV(text) {
+        try {
+            if (!text || typeof text !== "string") {
+                console.warn("Invalid or empty CSV text input.");
+                return [];
+            }
+
+            const lines = text.trim().split("\n");
+            if (lines.length < 2) {
+                console.warn("CSV appears to contain no data rows.");
+                return [];
+            }
+
+            return lines
+                .slice(1) // Skip header
+                .map((line, index) => {
+                    const parts = line.split(";").map((part) => part.trim());
+
+                    if (parts.length < 6) {
+                        console.warn(`Skipping malformed row ${index + 2}: not enough fields`, line);
+                        return null;
+                    }
+                    return {
+                        namekey: parts[0],
+                        imageurl: parts[1],
+                        person: parts[2],
+                        personLabel: parts[3],
+                        personDescription: capitalizeFirstLetter(parts[4]),
+                        wikipediaENurl: parts[5],
+                    };
+                })
+                .filter((entry) => entry !== null);
+        }
+        catch (error) {
+            console.error("Error parsing CSV:", error);
+            return [];
         }
     }
 
